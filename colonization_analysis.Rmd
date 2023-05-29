@@ -1,0 +1,134 @@
+---
+title: "colonization_analysis"
+author: "cy"
+date: "2023-05-12"
+output:
+  html_document: default
+---
+
+###首先展示一下数据 
+
+```{r d}
+load("E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl_soil.RData")
+#计算growth rate
+d$gr_rate <- (log(d$DBH2)-log(d$DBH1))
+d_AM <- subset(d, !is.na(qr_AM))
+summary(d_AM)
+```
+
+## 数据的简单处理
+
+先对数据进行**SCALE**，使用x_scaled = (x - min(x)) / (max(x) - min(x))这个最简单的方法，让数据形成0-1的，方便进行后续的分析
+
+```{r d_AM, echo=FALSE}
+#选取数据的部分进行scale
+sc <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+d_AM$sc_qr_AM <- sc(d_AM$qr_AM)
+d_AM$sc_gr_rate <- sc(d_AM$gr_rate)
+```
+### 看一下两个变量
+```{r}
+hist(d_AM$sc_qr_AM)
+```
+
+```{r}
+hist(d_AM$sc_gr_rate)
+```
+### 由于两个变量很难正态化，故进行变化，将其残差正态化
+```{r}
+library(MASS)
+# 对d_AM$qr_AM列使用Box-Cox转换
+boxcox(sc_qr_AM +1 ~ 1, data = d_AM,lambda = seq(9,12, length.out = 10))
+```
+```{r}
+#画出转换后的形状
+hist(d_AM$sc_qr_AM^(10.3))
+
+#划出一列变换后的数据，方便画图
+d_AM$sc_AM_10.3 = (d_AM$sc_qr_AM)^10.3
+```
+###试一下结果的变化
+
+```{r}
+#进行lm
+r2=lm(sc_gr_rate~sc_AM_10.3, data=d_AM)
+#画出残差的分布
+hist(r2$residuals)
+```
+
+```{r}
+
+
+cor.test(d_AM$sc_qr_AM, d_AM$gr_rate)
+cor.test(d_AM$sc_AM_10.3, d_AM$gr_rate)
+```
+##结果
+（是否要在模型里添加更多变量，添加哪些？如何解释？
+画个图康康
+```{r}
+library(ggplot2)
+m <- coef(lm(sc_gr_rate ~ sc_qr_AM, data = d_AM))[2]
+b <- coef(lm(sc_gr_rate ~ sc_qr_AM, data = d_AM))[1]
+
+p <- ggplot(d_AM, aes(x=sc_qr_AM, y=sc_gr_rate)) + 
+  geom_point(color="#e5f5f9", shape=16, size=3) + 
+  geom_smooth(method="lm", se=TRUE, color="#99d8c9", size=1.2) +
+  xlab("AM侵染率") + 
+  ylab("生长速率") +
+  theme_minimal()+
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 18))
+
+# calculate correlation coefficient and p-value
+r <- cor(d_AM$sc_qr_AM, d_AM$sc_gr_rate)
+pval <- summary(lm(sc_gr_rate ~ sc_qr_AM, data = d_AM))$coef[2, 4]
+
+# add annotation for correlation coefficient and p-value
+p <- p +
+  annotate("text", x = max(d_AM$sc_qr_AM), y = min(d_AM$sc_gr_rate), 
+           label = paste0("R = ", round(r, 2), "\n p = ", format(pval, scientific = TRUE, digits = 2)),
+           hjust = 1) +
+  geom_text(x = max(d_AM$sc_qr_AM), y = max(d_AM$sc_gr_rate), 
+            label = paste0("Slope = ", round(m, 4), "\n Intercept = ", round(b, 2)), 
+            hjust = 1, vjust = 1)
+
+p
+
+```
+###把图换成残差正态的数据
+```{r}
+m <- coef(lm(sc_gr_rate ~ sc_AM_10.3, data = d_AM))[2]
+b <- coef(lm(sc_gr_rate ~ sc_AM_10.3, data = d_AM))[1]
+
+p <- ggplot(d_AM, aes(x=sc_AM_10.3, y=sc_gr_rate)) + 
+  geom_point(color="#e5f5f9", shape=16, size=3) + 
+  geom_smooth(method="lm", se=TRUE, color="#99d8c9", size=1.2) +
+  xlab("AM侵染率") + 
+  ylab("生长速率") +
+  theme_minimal()+
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 18))
+
+# calculate correlation coefficient and p-value
+r <- cor(d_AM$sc_AM_10.3, d_AM$sc_gr_rate)
+pval <- summary(lm(sc_gr_rate ~ sc_AM_10.3, data = d_AM))$coef[2, 4]
+
+# add annotation for correlation coefficient and p-value
+p <- p +
+  annotate("text", x = max(d_AM$sc_AM_10.3), y = min(d_AM$sc_gr_rate), 
+           label = paste0("R = ", round(r, 2), "\n p = ", format(pval, scientific = TRUE, digits = 2)),
+           hjust = 1) +
+  geom_text(x = max(d_AM$sc_AM_10.3), y = max(d_AM$sc_gr_rate), 
+            label = paste0("Slope = ", round(m, 4), "\n Intercept = ", round(b, 2)), 
+            hjust = 1, vjust = 1)
+
+p
+
+```
+
+
+## 相关性分析
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,0 +1,176 @@
+---
+title: "生物和非生物因子对菌根侵染率的影响"
+author: "cy"
+date: "2023-05-15"
+output: html_document
+---
+# 分析目标
+目标主题的确定有利于进一步的分析，每次进来之前先看主题！！！（#后面记得加空格不然不识别
+
+**生物-自身因素-植物自身（host）（host-colonization）**
+
+**谱系是否保守（和数据库对照） 考虑谱系的距离（谱系信号）**
+
+Y (colonization rate) ~ species identity （物种、大小）+ neighbors (邻体数量、类型、或许要分同种异种、是否加权谱系（CNDD系数（不同类型））) +soil+light+…*
+ 1. 首先，Y侵染率有了，需要的数据species identity应该是每个物种，这是个分类变量？或者分类+连续变量，就是host的侵染率，也有了。下面要解决的问题就是neighbors，那么先筛选出邻体？
+ 
+## 计算距离权重的CNDD（NCI）
+这个过程涉及计算邻居树的**种内密度（conspecific density）和种间密度（heterospecific density）**，其中使用了**逆距离加权基面积（inverse distance-weighted basal areas）**的总和。以下是该过程的一般步骤：
+
+1. 首先，确定目标树的邻居树，这些树可能是目标树周围的其他树。（循环完成√
+
+2. 对于每棵邻居树，计算其基面积。基面积是指树木横截面（通常是树干截面）的面积，可以通过测量直径或周长，并应用相应的公式计算得到。√
+
+3. 计算目标树与每棵邻居树之间的距离。可以使用欧几里得距离或其他距离度量方法来计算树与树之间的距离。√
+
+4. 对于每棵邻居树，计算其逆距离权重。逆距离权重是基于距离的函数，远离目标树的邻居树将具有较低的权重，而接近目标树的邻居树将具有较高的权重。常用的逆距离权重函数包括线性、指数或高斯等函数。√
+
+5. 对于每棵邻居树，计算其逆距离加权基面积。将邻居树的基面积乘以其对应的逆距离权重，得到加权的基面积。
+
+6. 将所有邻居树的逆距离加权基面积相加，得到种内密度的总和和种间密度的总和。
+
+
+# 展示
+## 第一步当然是展示数据
+
+```{r plot focal}
+p2 <- ggplot()
+p2 <- p2 + geom_point(data = d, aes(x = GX, y = GY), color = "#2ca25f", size = 0.8)
+p2 <- p2 + labs(title = "Focal Individuals", x = "GX", y = "GY")
+p2 <- p2 + theme(plot.background = element_rect(fill = "white"),
+                 plot.margin = margin(1, 1, 1, 1, "cm"),
+                 plot.title = element_text(size = 25, hjust = 1),
+                 axis.title = element_text(size = 22),
+                 axis.text = element_text(size = 20),
+                 legend.title = element_blank(),  # 移除图例标题
+                 legend.key = element_blank(),  # 移除图例的颜色方块
+                 legend.text = element_text(size = 18),
+                 legend.position = "bottom")  # 将图例放置在底部
+
+ggsave("focal.png", plot = p2, width = 20, height = 10, units = "in", dpi = 300)
+
+p2
+```
+
+```{r neighbors, include=FALSE}
+
+library(ggplot2)
+
+p1 <- ggplot()
+p1 <- p1 + geom_point(data = neighborselect, aes(x = GX_n, y = GY_n), color = "#99d8c9", size = 0.5)
+p1 <- p1 + geom_point(data = d, aes(x = GX, y = GY), color = "#2ca25f", size = 0.8)
+p1 <- p1 + labs(title = "Neighbors", x = "GX", y = "GY")
+p1 <- p1 + theme(plot.background = element_rect(fill = "white"),
+                 plot.margin = margin(1, 1, 1, 1, "cm"),
+                 plot.title = element_text(size = 25, hjust = 1),
+                 axis.title = element_text(size = 22),
+                 axis.text = element_text(size = 20),
+                 legend.title = element_blank(),  # 移除图例标题
+                 legend.key = element_blank(),  # 移除图例的颜色方块
+                 legend.text = element_text(size = 18),
+                 legend.position = "bottom")  # 将图例放置在底部
+
+# 存储图表为图片文件（例如PNG格式）
+ggsave("neighbor_10.png", plot = p1, width = 20, height = 10, units = "in", dpi = 300)
+
+p1
+```
+
+
+## 获得了分析的数据
+```{r nlme}
+library(lme4)
+#把因变量们变成正态的，并scale它们
+
+#变正态
+d$nor_conspecific_dis <- log(d$conspecific_dis)
+d$nor_DBH2 <- log(d$DBH2)
+d$nor_heterospecific_dis <- log(d$heterospecific_dis)
+d_AM_co <- d[!is.infinite(d$nor_conspecific_dis), ]
+d_AM_co$nor_heterospecific_dis <- log(d_AM_co$heterospecific_dis)
+d_AM_co$nor_DBH2 <- log(d_AM_co$DBH2)
+
+#scale
+#sc <- function(x) {
+#  (x - min(x)) / (max(x) - min(x))
+#}
+
+
+###同种
+d_AM_co$sc_nor_conspecific_dis <- sc(d_AM_co$nor_conspecific_dis)
+d_AM_co$sc_nor_heterospecific_dis <- sc(d_AM_co$nor_heterospecific_dis)
+d_AM_co$sc_nor_DBH2 <- sc(d_AM_co$nor_DBH2)
+d_AM_co$sc_TP <- sc(d_AM_co$TP)
+d_AM_co$sc_TN <- sc(d_AM_co$TN)
+d_AM_co$sc_TK <- sc(d_AM_co$TK)
+
+
+model_c <- lmer(qr_AM ~  sc_nor_DBH2 * sc_nor_conspecific_dis  * sc_TP * sc_TN * sc_TK + (1 | Species.x.x), data = d_AM_co)
+
+model_ch <- lmer(qr_AM ~  sc_nor_DBH2 + sc_nor_conspecific_dis + sc_nor_heterospecific_dis + sc_TP + sc_TN + sc_TK + (1 | Species.x.x), data = d_AM_co)
+###异种
+d$sc_nor_heterospecific_dis <- sc(d$nor_heterospecific_dis)
+d$sc_nor_DBH2 <- sc(d$nor_DBH2)
+d$sc_TP <- sc(d$TP)
+d$sc_TN <- sc(d$TN)
+d$sc_TK <- sc(d$TK)
+
+model_h <- lmer(qr_AM ~  sc_nor_DBH2 * sc_nor_heterospecific_dis  * sc_TP * sc_TN * sc_TK + (1 | Species.x.x), data = d)
+
+library(ggplot2)
+
+# 绘制散点图
+ggplot(data = d, aes(x = sc_nor_heterospecific_dis, y = qr_AM)) +
+    geom_point() +
+    labs(x = "heterospecific Distance", y = "qr_AM") +
+    ggtitle("Scatter Plot of Conspecific Distance vs. qr_AM")
+
+###哦，我有没有机会把CI和HI放一起
+
+
+
+model_h <- glmer(qr_AM ~ heterospecific_dis + TP + TN + TK + (1 | Species.x.x), data = d, family = binomial)
+
+# 这里的plot_ID是你数据中标识每个观测点的变量。如果你的数据没有观测点标识，请适当替换为其他标识符。
+
+
+```
+
+
+## 老师说先不算谱系的部分
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+####提取物种对的信息
+#species_pairs <- unique(t(combn(unique(neighborselect$Species_f), 2)))
+#colnames(species_pairs) <- c("Species_f","Species_n")
+#species_pairs <- as.data.frame(species_pairs)
+###把它们的物种信息合并进去
+#species_pairs <- left_join(species_pairs, HSD_species, by = c("Species_f" = "Species"))
+#species_pairs <- left_join(species_pairs, HSD_species, by = c("Species_n" = "Species"))
+
+###谱系距离
+#install_github("jinyizju/V.PhyloMaker")
+#install_packages("ape")
+
+#sp_list <- HSD_species[,c("family", "genus", "species")]
+#sp_list <- select(sp_list, c("species", "genus","family"))
+#sp_tree <- phylo.maker(sp.lis=sp_list)
+#sp_tr <- sp_tree$scenario.3
+#plot(sp_tr)
+#write.tree(sp_tr, "sp_tree.newick")
+#dist.mat <- conphenetic(sp_tr)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
