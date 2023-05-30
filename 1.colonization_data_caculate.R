@@ -1,22 +1,19 @@
 
-##### set the local folder
-setwd("E:/黑石顶测菌根/菌根侵染率/数据整理")
-
 ###### input the data
-Qrl <- read.csv("菌根侵染率_观察记录_整合.csv",header = T,fileEncoding = "GBK")
-N_data <- read.csv("N整理.csv",header = T,fileEncoding = "GBK")
-S_data <- read.csv("S整理.csv",header = T,fileEncoding = "GBK")
-weigh <- read.csv("weigh.csv",header = T,fileEncoding = "GBK")
-Nor_data <- read.csv("整理.csv",header = T,fileEncoding = "GBK")
-Qrl <- read.csv("菌根侵染率_观察记录_整合.csv",header = T,fileEncoding = "GBK")
-HSD_data <- read.csv("E:/Chu Lab/hsd.species.alive.cy.branch0.csv",header = T,fileEncoding = "GBK")
-HSD_env <- read.csv("E:/Chu Lab/HSD.origin/soil_origin.csv",header = T,fileEncoding = "GBK")
+Qrl <- read.csv("data/菌根侵染率_观察记录_整合.csv",header = T,fileEncoding = "GBK")
+N_data <- read.csv("data/N整理.csv",header = T,fileEncoding = "GBK")
+S_data <- read.csv("data/S整理.csv",header = T,fileEncoding = "GBK")
+weigh <- read.csv("data/weigh.csv",header = T,fileEncoding = "GBK")
+Nor_data <- read.csv("data/整理.csv",header = T,fileEncoding = "GBK")
+Qrl <- read.csv("data/菌根侵染率_观察记录_整合.csv",header = T,fileEncoding = "GBK")
+HSD_data <- read.csv("data/hsd.species.alive.cy.branch0.csv",header = T,fileEncoding = "GBK")
+HSD_env <- read.csv("data/soil_origin.csv",header = T,fileEncoding = "GBK")
 
 
 ###### select the useful data of data morphology
 # insert diameters
 library(stringr)
-diameter <- read.table("E:/黑石顶测菌根/菌根侵染率/数据整理/ylj_for_diameter.txt",
+diameter <- read.table("data/ylj_for_diameter.txt",
                        header = F,sep="\t",na.strings = "NA",
                        fill = T,fileEncoding = "GBK")
 diameter <- diameter[,-c(3:17,19,21,23:109)]
@@ -26,7 +23,7 @@ str(diameter$TagNew)
 diameter$TagNew = str_pad(diameter$TagNew,7,side = "left", "0")
 
 #insert length
-length <- read.table("E:/黑石顶测菌根/菌根侵染率/数据整理/ylj_for_length.txt",
+length <- read.table("data/ylj_for_length.txt",
 header = F,sep="\t",na.strings = "NA",
 fill = T,fileEncoding = "GBK")
 length <- length[-c(1:5),-c(3:15,17:109)]
@@ -94,7 +91,7 @@ root_qrl <- left_join(root_qrl,root_morphology,by="TagNew")
 root_qrl <- as.data.frame(root_qrl)
 root_qrl <- root_qrl %>% select(-X.x, -Species.y, -Species.y.y)
 
-save(root_qrl,file = "E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl.RData")
+#save(root_qrl,file = "E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl.RData")
 
 #### 获取物种的菌根类型
 # 创建一个新的数据框"M_Type_deciede"
@@ -119,8 +116,6 @@ for (species in unique_species) {
   M_Type_deciede <- rbind(M_Type_deciede, new_row)
 }
 
-# 查看"M_Type_deciede"数据框
-M_Type_deciede
 
 ###给它们赋予菌根类型
 library(dplyr)
@@ -134,11 +129,17 @@ M_Type_deciede <- M_Type_deciede %>%
          M_Type = ifelse(qr_EM > 0, "EM", M_Type),
          M_Type = ifelse(qr_AM > 0 & qr_EM > 0, "AM-EM", M_Type))
 
+###把物种的数据和单个个体的数据合并
+library(dplyr)
+M_Type_deciede <- M_Type_deciede[, c("Latin", "M_Type")]
+
+root_qrl<- left_join(root_qrl, M_Type_deciede, by = "Latin")
+
 # 试试看如果按照个体
 library(dplyr)
 
 root_qrl <- root_qrl %>%
-  mutate(M_Type = case_when(
+  mutate(Type = case_when(
     !is.na(qr_AM) & qr_AM > 0 & !is.na(qr_EM) & qr_EM > 0 ~ "AM-EM",
     !is.na(qr_AM) & qr_AM > 0 ~ "AM",
     !is.na(qr_EM) & qr_EM > 0 ~ "EM",
