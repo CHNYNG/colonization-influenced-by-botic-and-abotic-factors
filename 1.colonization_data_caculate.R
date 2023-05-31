@@ -6,8 +6,7 @@ S_data <- read.csv("data/S整理.csv",header = T,fileEncoding = "GBK")
 weigh <- read.csv("data/weigh.csv",header = T,fileEncoding = "GBK")
 Nor_data <- read.csv("data/整理.csv",header = T,fileEncoding = "GBK")
 Qrl <- read.csv("data/菌根侵染率_观察记录_整合.csv",header = T,fileEncoding = "GBK")
-HSD_data <- read.csv("data/hsd.species.alive.cy.branch0.csv",header = T,fileEncoding = "GBK")
-HSD_env <- read.csv("data/soil_origin.csv",header = T,fileEncoding = "GBK")
+HSD_data <- read.csv("data/HSD.csv",header = T,fileEncoding = "GBK")
 
 
 ###### select the useful data of data morphology
@@ -21,6 +20,7 @@ colnames(diameter) <- c("TagNew","Opterator","ProjArea(cm2)","SurfArea(cm2)","Av
 diameter$TagNew <- as.character(diameter$TagNew)
 str(diameter$TagNew)
 diameter$TagNew = str_pad(diameter$TagNew,7,side = "left", "0")
+HSD_data$TagNew = str_pad(HSD_data$TagNew,7,side = "left", "0")
 
 #insert length
 length <- read.table("data/ylj_for_length.txt",
@@ -89,7 +89,7 @@ root_qrl <- left_join(root_qrl,root_morphology,by="TagNew")
 
 #整理下root_qrl
 root_qrl <- as.data.frame(root_qrl)
-root_qrl <- root_qrl %>% select(-X.x, -Species.y, -Species.y.y)
+root_qrl <- root_qrl %>% select(-X, -Species.y)
 
 #save(root_qrl,file = "E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl.RData")
 

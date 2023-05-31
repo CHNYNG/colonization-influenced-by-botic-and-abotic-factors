@@ -1,10 +1,7 @@
 # neighborselect 数据准备
 #加载数据
-library(stringr)
-load("E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl_soil.RData")
-HSD <- read.csv("E:/Chu Lab/hsd.species.alive.cy.branch0.csv",header = TRUE,fileEncoding = "GBK" )
-HSD <- HSD[,c("TagNew","Latin","Qudrat","Species","GX","GY","Status1","Status2","DBH1","DBH2","H","Family","Genus","Species.x","abundance")]
-HSD$TagNew = str_pad(HSD$TagNew,7,side = "left", "0")
+#load("E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl_soil.RData")
+HSD <- HSD_data_0[,c("TagNew","Latin","Qudrat","Species","GX","GY","Status1","Status2","DBH1","DBH2","H","Family","Genus","Species.x","abundance")]
 HSD_species <- subset(HSD, select = c(Family, Genus, Species.x, Species, Latin))
 HSD_species <- unique(HSD_species)
 ##1. 筛选出neighbors，这里使用distance＜10
