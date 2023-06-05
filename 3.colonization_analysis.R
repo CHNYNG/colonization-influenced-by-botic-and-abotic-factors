@@ -3,9 +3,9 @@
 
 #load("E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl_soil.RData")
 
-
 ###计算一下乔木生长速率
 d$gr_rate <- (log(d$DBH2)-log(d$DBH1))
+
 
 ####筛选出AM的个体
 d_AM <- subset(d, !is.na(qr_AM))
