@@ -1,6 +1,20 @@
 # neighborselect 数据准备
 #加载数据
 #load("E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl_soil.RData")
+##给数据库加载物种信息
+#library(devtools)
+#install_github("helixcn/plantlist", build_vignettes = TRUE)
+#加载plantlist包
+library(plantlist)
+#先筛选出所有的物种
+# 获取不重复的拉丁名称列
+unique_latin_species <- unique(HSD_data_0$Latin)
+specieslist <- TPL(unique_latin_species)
+colnames(specieslist) <- c("Latin","Genus","Family","Family_number","Order","Group")
+#给物种信息合并菌根类型
+
+
+
 HSD <- HSD_data_0[,c("TagNew","Latin","Qudrat","Species","GX","GY","Status1","Status2","DBH1","DBH2","H","Family","Genus","Species.x","abundance")]
 HSD_species <- subset(HSD, select = c(Family, Genus, Species.x, Species, Latin))
 HSD_species <- unique(HSD_species)
