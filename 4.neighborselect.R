@@ -1,38 +1,22 @@
 # neighborselect 数据准备
 #加载数据
 #load("E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl_soil.RData")
-##给数据库加载物种信息
-#library(devtools)
-#install_github("helixcn/plantlist", build_vignettes = TRUE)
-#加载plantlist包
-library(plantlist)
-#先筛选出所有的物种
-# 获取不重复的拉丁名称列
-unique_latin_species <- unique(HSD_data_0$Latin)
-specieslist <- TPL(unique_latin_species)
-colnames(specieslist) <- c("Latin","Genus","Family","Family_number","Order","Group")
-#给物种信息合并菌根类型
 
-
-
-HSD <- HSD_data_0[,c("TagNew","Latin","Qudrat","Species","GX","GY","Status1","Status2","DBH1","DBH2","H","Family","Genus","Species.x","abundance")]
-HSD_species <- subset(HSD, select = c(Family, Genus, Species.x, Species, Latin))
-HSD_species <- unique(HSD_species)
 ##1. 筛选出neighbors，这里使用distance＜10
 # 创建一个空的数据框用于存储结果
 result <- data.frame()
 
 # 遍历d数据集的每一行
-for (i in 1:nrow(d)) {
+for (i in 1:nrow(root_qrl)) {
   # 计算当前行的点与HSD数据集中所有点的距离
-  distances <- sqrt((d$GX[i] - HSD$GX)^2 + (d$GY[i] - HSD$GY)^2)
+  distances <- sqrt((root_qrl$GX[i] - HSD$GX)^2 + (root_qrl$GY[i] - HSD$GY)^2)
   
   # 筛选出距离小于10米的点的索引
   indices <- which(distances < 10 & distances > 0.001)
   
   # 如果存在距离小于10米的点，则将这些点添加到结果数据框中
   if (length(indices) > 0) {
-    result <- rbind(result, data.frame(d[i,c("TagNew") ], HSD[indices,c("TagNew") ]))
+    result <- rbind(result, data.frame(root_qrl[i,c("TagNew") ], HSD[indices,c("TagNew") ]))
   }
 }
 
@@ -85,8 +69,8 @@ colnames(conspecific_dis) <- c("TagNew_f","conspecific_dis")
 
 library(dplyr)
 
-d <- left_join(d, conspecific_dis, by = c("TagNew" = "TagNew_f"))
-d <- left_join(d, heterospecific_dis, by = c("TagNew" = "TagNew_f"))
+root_qrl <- left_join(root_qrl, conspecific_dis, by = c("TagNew" = "TagNew_f"))
+root_qrl <- left_join(root_qrl, heterospecific_dis, by = c("TagNew" = "TagNew_f"))
 
 
 

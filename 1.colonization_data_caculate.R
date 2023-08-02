@@ -1,3 +1,8 @@
+######
+##这部分用来整理数据##
+###整理了所选所有个体的AM侵染率、EcM侵染率，个体信息
+#（包含TagNew、个体DBH和物种中文名、拉丁名和科属种）
+###根系信息（包含根系表面积、平均根直径、比根长
 
 ###### input the data
 Qrl <- read.csv("data/菌根侵染率_观察记录_整合.csv",header = T,fileEncoding = "GBK")
@@ -70,6 +75,10 @@ Qrl_ca$qr_Pn <- Qrl_ca$Pn/Qrl_ca$gcsys
 Qrl_ca$qr_Pq <- Qrl_ca$Pq/Qrl_ca$gcsys
 Qrl_ca$qr_fzxb <- Qrl_ca$Fzxb/Qrl_ca$gcsys
 
+#这里做完了，可以把已经合并的数据集删掉了
+rm(gcsys,EMsys,jssys,BZ,Hbbz,Pn,Pq,Fzxb)
+
+
 #####merge the colonization data to TagNew
 total_data <- rbind(Nor_data,S_data,N_data)
 colnames(total_data) <- c("TagNew","Numbers")
@@ -80,17 +89,18 @@ total_data$TagNew = str_pad(total_data$TagNew,7,side = "left", "0")
 root_qrl <- data.frame()
 root_qrl <- left_join(Qrl_ca,total_data,by="Numbers")
 
-HSD_data_0 <- subset(HSD_data,Branch==0)
-HSD_data_0$TagNew <- as.character(HSD_data_0$TagNew)
-str(HSD_data_0$TagNew)
-HSD_data_0$TagNew = str_pad(HSD_data_0$TagNew,7,side = "left", "0")
-root_qrl <- left_join(root_qrl,HSD_data_0,by="TagNew")
+
+HSD_data$TagNew <- as.character(HSD_data$TagNew)
+str(HSD_data$TagNew)
+root_qrl <- left_join(root_qrl,HSD_data,by="TagNew",relationship = "many-to-many")
 root_qrl <- left_join(root_qrl,root_morphology,by="TagNew")
 
 #整理下root_qrl
 root_qrl <- as.data.frame(root_qrl)
 root_qrl <- root_qrl %>% select(-X, -Species.y)
 
+#### 这里处理完了，把已经有的数据删一删
+rm(diameter,weigh,total_data,S_data,N_data,length,Nor_data,Qrl,Qrl_ca,root_morphology)
 #save(root_qrl,file = "E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl.RData")
 
 #### 获取物种的菌根类型
@@ -115,7 +125,8 @@ for (species in unique_species) {
   # 将新行添加到"M_Type_deciede"
   M_Type_deciede <- rbind(M_Type_deciede, new_row)
 }
-
+###这里用完了species，把它删掉吧
+rm(species,total_qr_AM,total_qr_EM,new_row,subset_data)
 
 ###给它们赋予菌根类型
 library(dplyr)
@@ -146,4 +157,19 @@ root_qrl <- root_qrl %>%
     TRUE ~ "NA"  # 二者均为 NA 或其他情况
   ))
 
-
+###这里用species来merge一下数据库里的菌根类型
+##### 给数据库加载物种信息
+#library(devtools)
+#install_github("helixcn/plantlist", build_vignettes = TRUE)
+#加载plantlist包
+library(plantlist)
+#先筛选出所有的物种
+# 获取不重复的拉丁名称列
+unique_species <- unique(HSD_data$Latin)
+specieslist <- TPL(unique_species)
+colnames(specieslist) <- c("Latin","Genus","Family","Family_number","Order","Group")
+#把正名后的物种加入到大数据里
+root_qrl <- left_join(root_qrl,specieslist[,c("Latin","Genus","Family","Order")],
+                      by = "Latin")
+#给物种信息合并菌根类型
+###先不加，嘤嘤嘤-

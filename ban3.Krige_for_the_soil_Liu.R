@@ -15,7 +15,7 @@ library(automap)
 library(sp)
 
 root_qrl_na <- root_qrl[!is.na(root_qrl$GX), ]
-prd.loc <- root_qrl_na[,c("GX","GY")]
+prd.loc <- root_qrl_na[,c("GX","GY","TagNew")]
 prd.loc$GX <- as.numeric(prd.loc$GX)
 prd.loc$GY <- as.numeric(prd.loc$GY)
 coordinates(Soil) = ~ GX + GY
@@ -50,3 +50,10 @@ dat.krnw$TagNew = str_pad(dat.krnw$TagNew,7,side = "left", "0")
 root_qrl_soil <- left_join(root_qrl,dat.krnw[
   ,c("SOC..mg.g.","TN..mg.g.","TP..mg.g.","C.N","C.P","N.P","AP..mg.kg.","pH" ,"TagNew")],
   by="TagNew")
+
+
+###To weitao
+prd.loc <- as.data.frame(prd.loc)
+Soil <- as.data.frame(Soil)
+save(prd.loc,Soil,file = "data/Weitao/soildata.RData")
+save(dat.krnw,file = "data/Weitao/soildata_vyang.RData")
