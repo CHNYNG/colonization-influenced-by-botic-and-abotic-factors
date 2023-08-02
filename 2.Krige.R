@@ -241,4 +241,7 @@ soil_cy_pred <- data.frame(
 #####
 #删除一些过程变量
 #####
-rm()
+rm(ap_g,ap_prd_dat,ap_variog,ph_g,ph_prd_dat,ph_variog,
+   soc_g,soc_prd_dat,soc_variog,tn_g,tn_prd_dat,tn_variog,
+   tp_g,tp_prd_dat,tp_variog,ap_g_maxdis,gx_column,gy_column,
+   ph_g_maxdis,soc_g_maxdis,tn_g_maxdis,tp_g_maxdis)
