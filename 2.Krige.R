@@ -228,7 +228,7 @@ ap_prd_dat <- auto_kriging(ap_variog, ap_g)
 ph_prd_dat <- auto_kriging(ph_variog, ph_g)
 
 ##之后把它们合在一起
-soil_cy_pred <- data.frame(
+soil_pred <- data.frame(
   gx = prd_loc$GX,
   gy = prd_loc$GY,
   tagnew = prd_loc$TagNew,
