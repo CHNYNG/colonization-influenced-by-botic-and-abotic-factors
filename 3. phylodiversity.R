@@ -1,8 +1,25 @@
+#####
+#加载前步骤
+source("2.krige.R")
+
 # 系统发育
 library(picante)
 library(tidyverse)
 
 #数据集是root_qrl，黑石顶的数据集是HSD_data
+#location of samples
+sp_loc <- data.frame(
+  GX = as.numeric(root_qrl$GX),
+  GY = root_qrl$GY,
+  TagNew = root_qrl$TagNew
+)
+
+##导入系统发育树
+hsd_phytr <- read.tree("Data/hsd_tree_vphylo.rwk")
+
+#test <- specieslist==test1
+#test1 <- gsub("_", " ",hsd_phytr$tip.label)
+#test <- setdiff(specieslist$Latin, test1)
 #这里需要把HSD的数据集match上科属种
 library(dplyr)
 HSD_data <- left_join(HSD_data,specieslist,
@@ -10,14 +27,14 @@ HSD_data <- left_join(HSD_data,specieslist,
 # 删除Family列中值为NA的行
 HSD_data <- HSD_data[!is.na(HSD_data$Family), ]
 
-##导入系统发育树
-hsd_phytr <- read.tree("Data/hsd_tree_vphylo.rwk")
 alive_status <- c("Alive", "P", "lean", "alive", "snag")
 hsd_alive <- HSD_data %>%
   filter(Status2 %in% alive_status, 
          !is.na(TagNew), 
          !is.na(Branch), 
-         !is.na(DBH2))
+         !is.na(DBH2)) %>%
+  rename(scientific.name = Latin)
+
 
 #对hsd_alive数据框按照tagnew列的不同取值进行分组，
 #然后在每个分组内计算dbh2列的平方和，
@@ -34,12 +51,14 @@ hsd_multibr <- hsd_alive %>%
 #将其中的空格替换为下划线，并得到一个
 #新的数据框hsd_alive_singlebr
 
-hsd_alive_singlebr <- hsd_alive %>% 
+hsd_alive_singlebr <- hsd_alive %>%
   filter(Branch == 0) %>% 
   left_join(hsd_multibr, by = "TagNew") %>% 
   mutate(
-    scientific.name = str_replace(scientific.name, " ", "_")
+    scientific.name = gsub(" ", "_",scientific.name),
+    GX = as.numeric(as.character(GX))
   )
+
 
 ##一个看不懂的循环
 # loops ----
@@ -51,10 +70,10 @@ for (i in 1:dim(sp_loc)[1]) {
   
   # 20m circle
   hsd_sub <- hsd_alive_singlebr %>% 
-    filter(sqrt((gx - sp_loc$gx[i])^2 + (gy - sp_loc$gy[i])^2) <= 20)
+    filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 20)
   
   # phylo tree with species in 20m circle
-  tr_sub <- hsd_phytr %>% 
+  tr_sub <- hsd_phytr %>%
     drop.tip(setdiff(hsd_phytr$tip.label, unique(hsd_sub$scientific.name)))
   
   # abundance-un-weighted phylo 
@@ -81,8 +100,19 @@ for (i in 1:dim(sp_loc)[1]) {
            dimnames = list("s1", names(table(hsd_sub_sub$scientific.name))))
   # mpd
   mpd20_weigh[i] <- picante::mpd(tr_sub_community, cophenetic(tr_sub),
-                                 abundance.weighted = T)
+                                 abundance.weighted = TRUE)
   # mntd
   mntd20_weigh[i] <- picante::mntd(tr_sub_community, cophenetic(tr_sub),
-                                   abundance.weighted = T)
+                                   abundance.weighted = TRUE)
 }
+
+# data frame ----
+sp_loc <- sp_loc %>% 
+  mutate(
+    pd20_unweigh = pd20_unweigh,
+    mpd20_unweigh = mpd20_unweigh,
+    mpd20_weigh = mpd20_weigh,
+    mntd20_unweigh = mntd20_unweigh,
+    mntd20_weigh = mntd20_weigh,
+  )
+

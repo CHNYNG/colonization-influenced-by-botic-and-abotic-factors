@@ -1,4 +1,8 @@
 ##### 
+#加载前步骤
+source("1.colonization_data_caculate.R")
+
+##### 
 #土壤差值
 soil <- read.csv("data/HSD_Soil_Nutrition_Liu.csv",header = T,fileEncoding = "GBK")
 ####把数据和坐标合并一下

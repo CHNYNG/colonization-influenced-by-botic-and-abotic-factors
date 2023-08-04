@@ -26,7 +26,8 @@ diameter$TagNew <- as.character(diameter$TagNew)
 str(diameter$TagNew)
 diameter$TagNew = str_pad(diameter$TagNew,7,side = "left", "0")
 HSD_data$TagNew = str_pad(HSD_data$TagNew,7,side = "left", "0")
-
+HSD_data_filtered <- HSD_data %>%
+  filter(Latin != "A-VINE" & Latin != "unknown" & Latin != "T_VINE")
 #insert length
 length <- read.table("data/ylj_for_length.txt",
 header = F,sep="\t",na.strings = "NA",
@@ -90,8 +91,7 @@ root_qrl <- data.frame()
 root_qrl <- left_join(Qrl_ca,total_data,by="Numbers")
 
 
-HSD_data$TagNew <- as.character(HSD_data$TagNew)
-str(HSD_data$TagNew)
+
 root_qrl <- left_join(root_qrl,HSD_data,by="TagNew",relationship = "many-to-many")
 root_qrl <- left_join(root_qrl,root_morphology,by="TagNew")
 
