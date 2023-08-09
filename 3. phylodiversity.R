@@ -1,6 +1,6 @@
 #####
 #加载前步骤
-source("2.krige.R")
+#source("2.krige.R")
 
 # 系统发育
 library(picante)
@@ -8,10 +8,12 @@ library(tidyverse)
 
 #数据集是root_qrl，黑石顶的数据集是HSD_data
 #location of samples
+filtered_root_qrl <- root_qrl %>% 
+  filter(!is.na(GX))
 sp_loc <- data.frame(
-  GX = as.numeric(root_qrl$GX),
-  GY = root_qrl$GY,
-  TagNew = root_qrl$TagNew
+  GX = as.numeric(filtered_root_qrl$GX),
+  GY = filtered_root_qrl$GY,
+  TagNew = filtered_root_qrl$TagNew
 )
 
 ##导入系统发育树
@@ -116,3 +118,11 @@ sp_loc <- sp_loc %>%
     mntd20_weigh = mntd20_weigh,
   )
 
+######
+#之后把10/50的也跑出来
+#####
+#删掉一些中间变量
+rm(hsd_sub,hsd_sub_sub,
+   tr_sub,tr_sub_community,tr_sub_dis2,i,
+   mntd20_unweigh,mntd20_weigh,mpd20_unweigh,
+   mpd20_weigh,pd20_unweigh,tr_sub_dis)

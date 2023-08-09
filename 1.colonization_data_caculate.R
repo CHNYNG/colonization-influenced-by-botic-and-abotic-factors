@@ -17,6 +17,7 @@ HSD_data <- read.csv("data/HSD.csv",header = T,fileEncoding = "GBK")
 ###### select the useful data of data morphology
 # insert diameters
 library(stringr)
+library(dplyr)
 diameter <- read.table("data/ylj_for_diameter.txt",
                        header = F,sep="\t",na.strings = "NA",
                        fill = T,fileEncoding = "GBK")
@@ -26,8 +27,9 @@ diameter$TagNew <- as.character(diameter$TagNew)
 str(diameter$TagNew)
 diameter$TagNew = str_pad(diameter$TagNew,7,side = "left", "0")
 HSD_data$TagNew = str_pad(HSD_data$TagNew,7,side = "left", "0")
-HSD_data_filtered <- HSD_data %>%
-  filter(Latin != "A-VINE" & Latin != "unknown" & Latin != "T_VINE")
+HSD_data <- HSD_data %>%
+  filter(!(Latin %in% c("A-VINE", "unknown", "T_VINE")))
+
 #insert length
 length <- read.table("data/ylj_for_length.txt",
 header = F,sep="\t",na.strings = "NA",

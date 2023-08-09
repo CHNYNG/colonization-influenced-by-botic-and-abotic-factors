@@ -1,6 +1,6 @@
 ##### 
 #加载前步骤
-source("1.colonization_data_caculate.R")
+#source("1.colonization_data_caculate.R")
 
 ##### 
 #土壤差值
@@ -235,7 +235,7 @@ ph_prd_dat <- auto_kriging(ph_variog, ph_g)
 soil_pred <- data.frame(
   gx = prd_loc$GX,
   gy = prd_loc$GY,
-  tagnew = prd_loc$TagNew,
+  TagNew = prd_loc$TagNew,
   soc = soc_prd_dat$prediction,
   tn = tn_prd_dat$prediction,
   tp = tp_prd_dat$prediction,

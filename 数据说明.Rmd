@@ -21,8 +21,29 @@ EMsys - EM视野数
 
 jssys - 菌丝视野数
 
+
+### sp_loc
+
+pd20_unweigh : total phylogenetic diversity
+
+mpd20_unweigh : average phylogenetic diversity
+
+mpd20_weigh : relative average phylogenetic diversity
+
+mntd20_unweigh :nearest taxon phylogenetic diversity
+
+mntd20_weigh : relative nearest taxon phylogenetic diversity
+
+
+
+
 ## 关于数据获得方法的说明
 ## Introduction of analysis
+
+
+
+
+
 
 
 

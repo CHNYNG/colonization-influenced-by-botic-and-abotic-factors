@@ -1,97 +1,78 @@
 # neighborselect 数据准备
 #加载数据
 #load("E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl_soil.RData")
+####改造一下成为让韦韬师兄不嫌弃的代码，呜呜呜
+#首先是数据，用和phylodiversity的一样就可以
+#包含 sp_loc（所有focal物种的位置）、hsd_alive_singlebr黑石顶的物种数据
 
-##1. 筛选出neighbors，这里使用distance＜10
-# 创建一个空的数据框用于存储结果
-result <- data.frame()
 
-# 遍历d数据集的每一行
-for (i in 1:nrow(root_qrl)) {
-  # 计算当前行的点与HSD数据集中所有点的距离
-  distances <- sqrt((root_qrl$GX[i] - HSD$GX)^2 + (root_qrl$GY[i] - HSD$GY)^2)
+#####
+#其他多样性好麻烦哦，还是用vegan包吧。。。
+
+####我的物种在specieslist里
+unique_species <- gsub(" ", "_",unique_species)
+hsd_vegan_alpha_20 <- data.frame(scientific.name = unique_species)
+
+#一共有unique_species294个，把它们作为第一列
+for (i in 1:dim(sp_loc)[1]) {
   
-  # 筛选出距离小于10米的点的索引
-  indices <- which(distances < 10 & distances > 0.001)
+  # 20m circle
+  hsd_sub <- hsd_alive_singlebr %>% 
+    filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 20)
   
-  # 如果存在距离小于10米的点，则将这些点添加到结果数据框中
-  if (length(indices) > 0) {
-    result <- rbind(result, data.frame(root_qrl[i,c("TagNew") ], HSD[indices,c("TagNew") ]))
-  }
+  species_counts <- table(hsd_sub$scientific.name) %>%
+    as.data.frame() %>%
+    rename(scientific.name = Var1, Freq = Freq)
+  
+  hsd_vegan <- data.frame(scientific.name = unique_species)
+  
+  hsd_vegan <- hsd_vegan %>%
+    left_join(.,species_counts, by = "scientific.name") %>%
+    mutate(Freq = ifelse(is.na(Freq), 0, Freq)) 
+    
+  hsd_vegan_alpha_20[,i+1] <- hsd_vegan$Freq
+    
 }
+#整理一下下
+library(tidyr)
+rownames(hsd_vegan_alpha_20) <- hsd_vegan_alpha_20$scientific.name
+hsd_vegan_alpha_20 <- hsd_vegan_alpha_20[,-1]
+colnames(hsd_vegan_alpha_20) <- sp_loc$TagNew
+hsd_vegan_alpha_20 <- t(hsd_vegan_alpha_20)
 
-# 改一下列名，把focal的列名改为TagNew_f它的邻体为n
-colnames(result) <- c("TagNew_f","TagNew_n")
+library(vegan)
+#shannon
+shannon_div_20 <- diversity(hsd_vegan_alpha_20, index = "shannon")
+shannon_div_20 <- as.data.frame(shannon_div_20)
+#皮尔逊多样性指数（Pielou's Evenness Index）
+invsimpson_div_20 <- diversity(hsd_vegan_alpha_20, index = "invsimpson")
+invsimpson_div_20 <- as.data.frame(invsimpson_div_20)
+#辛普森多样性指数（Simpson Diversity Index）
+simpson_div_20 <- diversity(hsd_vegan_alpha_20, index = "simpson")
+simpson_div_20 <- as.data.frame(simpson_div_20)
+######整理数据为β多样性矩阵(需要的话)
+hsd_vegan_beita_20 <- ifelse(hsd_vegan_alpha_20 >= 1, 1, 0)
+#计算β多样性指数
+# 计算 Jaccard 相似性指数作为β多样性的距离
+#beta_div_jaccard_20 <- vegdist(hsd_vegan_alpha_20, method = "jaccard")
 
-# 给TagNew_f和TagNew_n带上它们原本的数据
-library(dplyr)
+# 计算 Bray-Curtis 相似性指数作为β多样性的距离
+#beta_div_bray_20 <- vegdist(hsd_vegan_alpha_20, method = "bray")
 
-neighborselect <- left_join(result, HSD, by = c("TagNew_f" = "TagNew"))
+# 计算 Sørensen-Dice 相似性指数作为β多样性的距离
+#beta_div_sorensen_20 <- vegdist(hsd_vegan_alpha_20, method = "kulczynski")
 
-neighborselect <- left_join(neighborselect, HSD, by = c("TagNew_n" = "TagNew"))
+# 计算 Euclidean 距离作为β多样性的距离
+#beta_div_euclidean_20 <- vegdist(hsd_vegan_alpha_20, method = "euclidean")
 
-# 整理一下列名
-colnames(neighborselect) <- c("TagNew_f", "TagNew_n", "Latin_f", "Qudrat_F", "Species_f","GX_f",  "GY_f",  "Status1_f","Status2_F", "DBH1_f","DBH2_f", "H_f","Family_f",  "Genus_f",   "Species.x_f","abundance_f",
-                              "Latin_n",   "Qudrat_n",  "Species_n", "GX_n", "GY_n", "Status1_n", "Status2_n", "DBH1_n", "DBH2_n","H_n",   "Family_n",  "Genus_n", "Species.x_n", "abundance_n")
+#####
+#整理一下
+sp_loc <- sp_loc %>% 
+  mutate(
+    shannon_div_20 = shannon_div_20$shannon_div_20,
+    invsimpson_div_20 = invsimpson_div_20$invsimpson_div_20,
+    simpson_div_20 = simpson_div_20$simpson_div_20
+  )
 
-# 3. 把距离打出来
-neighborselect$distance <- sqrt((neighborselect$GX_f-neighborselect$GX_n)^2+(neighborselect$GY_f-neighborselect$GY_n)^2)
-
-### 给它们分个家，把同种和异种分出来
-neighborselect$Type <- ifelse(neighborselect$Species_f == neighborselect$Species_n,
-                              "conspecific", "heterospecific")
-
-
-### 2. 计算一下每一棵邻居树的截面积(cm²)。基面积是指树木横截面（通常是树干截面）的面积，可以通过测量直径或周长，并应用相应的公式计算得到。
-neighborselect$ba1_n <- pi * (neighborselect$DBH1_n/2)^2
-neighborselect$ba2_n <- pi * (neighborselect$DBH2_n/2)^2
-
-### 4.5. 对于每棵邻居树，计算其逆距离加权基面积。将邻居树的基面积乘以其对应的逆距离权重，得到加权的基面积。
-neighborselect$ba2_dis_n <- neighborselect$ba2_n/(neighborselect$distance+0.001)
-
-### 6. 将所有邻居树的逆距离加权基面积相加，得到种内密度的总和和种间密度的总和
-
-library(dplyr)
-
-heterospecific_dis <- neighborselect %>%
-  filter(Type == "heterospecific") %>%
-  group_by(TagNew_f) %>%
-  summarise(sum_ba2_dis_n = sum(ba2_dis_n, na.rm = TRUE)) %>%
-  ungroup()
-colnames(heterospecific_dis) <- c("TagNew_f","heterospecific_dis")
-
-conspecific_dis <- neighborselect %>%
-  filter(Type == "conspecific") %>%
-  group_by(TagNew_f) %>%
-  summarise(sum_ba2_dis_n = sum(ba2_dis_n, na.rm = TRUE)) %>%
-  ungroup()
-colnames(conspecific_dis) <- c("TagNew_f","conspecific_dis")
-
-library(dplyr)
-
-root_qrl <- left_join(root_qrl, conspecific_dis, by = c("TagNew" = "TagNew_f"))
-root_qrl <- left_join(root_qrl, heterospecific_dis, by = c("TagNew" = "TagNew_f"))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#删掉一些无用的变量
+rm(species_counts,hsd_vegan,hsd_sub,i)
