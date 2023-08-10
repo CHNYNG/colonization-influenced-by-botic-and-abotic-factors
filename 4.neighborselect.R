@@ -75,4 +75,6 @@ sp_loc <- sp_loc %>%
   )
 
 #删掉一些无用的变量
-rm(species_counts,hsd_vegan,hsd_sub,i)
+rm(species_counts,hsd_vegan,hsd_sub,i,invsimpson_div_20,
+   shannon_div_20,simpson_div_20,hsd_vegan_alpha_20,
+   hsd_vegan_beita_20)

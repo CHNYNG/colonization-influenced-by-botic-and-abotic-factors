@@ -159,6 +159,8 @@ root_qrl <- root_qrl %>%
     TRUE ~ "NA"  # 二者均为 NA 或其他情况
   ))
 
+
+
 ###这里用species来merge一下数据库里的菌根类型
 ##### 给数据库加载物种信息
 #library(devtools)

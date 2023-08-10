@@ -233,8 +233,8 @@ ph_prd_dat <- auto_kriging(ph_variog, ph_g)
 
 ##之后把它们合在一起
 soil_pred <- data.frame(
-  gx = prd_loc$GX,
-  gy = prd_loc$GY,
+  GX = prd_loc$GX,
+  GY = prd_loc$GY,
   TagNew = prd_loc$TagNew,
   soc = soc_prd_dat$prediction,
   tn = tn_prd_dat$prediction,
