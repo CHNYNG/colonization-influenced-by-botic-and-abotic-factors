@@ -53,8 +53,10 @@ root_morphology <- left_join(root_morphology,weigh,by = "TagNew")
 #View(root_warning)
 #write.csv(root_warning,"root_warning.csv",fileEncoding = "GBK")
 
-root_morphology$'SRL(gcm)' <- as.numeric(root_morphology$Weight.g)/
-  as.numeric(root_morphology$`Length(cm)`)
+root_morphology$'SRL(gcm)' <- 
+  as.numeric(root_morphology$`Length(cm)`)/as.numeric(root_morphology$Weight.g)
+root_morphology$SRA <- 
+  as.numeric(root_morphology$`SurfArea(cm2)`)/as.numeric(root_morphology$Weight.g)
 
 ###calculate the colonization
 gcsys <- aggregate(Qrl$观察视野总数, by = list(type = Qrl$Numbers), sum)
