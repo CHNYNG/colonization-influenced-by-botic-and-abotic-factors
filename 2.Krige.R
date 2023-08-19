@@ -49,9 +49,9 @@ soc_g <- as.geodata(soil,
                     coords.col = gx_column:gy_column,  
                     data.col = as.numeric(which(names(soil) == "soc")))
 
-plot(soc_g)
-plot(soc_g, trend = "1st")
-plot(soc_g, trend = "2nd") # it seems that we should consider 2nd trend
+##plot(soc_g)
+##plot(soc_g, trend = "1st")
+##plot(soc_g, trend = "2nd") # it seems that we should consider 2nd trend
 
 #师兄说，这一行不用知道为啥，做就行
 soc_g_maxdis <- summary(soc_g)$distances.summary[2] / 2 # we usually do this
@@ -71,9 +71,9 @@ tn_g <- as.geodata(soil,
                     coords.col = gx_column:gy_column,  
                     data.col = as.numeric(which(names(soil) == "tn")))
 
-plot(tn_g)
-plot(tn_g, trend = "1st")
-plot(tn_g, trend = "2nd")
+#plot(tn_g)
+#plot(tn_g, trend = "1st")
+#plot(tn_g, trend = "2nd")
 
 #师兄说，这一行不用知道为啥，做就行
 tn_g_maxdis <- summary(tn_g)$distances.summary[2] / 2 # we usually do this
@@ -90,9 +90,9 @@ tp_g <- as.geodata(soil,
                    coords.col = gx_column:gy_column,  
                    data.col = as.numeric(which(names(soil) == "tp")))
 
-plot(tp_g)
-plot(tp_g, trend = "1st")
-plot(tp_g, trend = "2nd")
+#plot(tp_g)
+#plot(tp_g, trend = "1st")
+#plot(tp_g, trend = "2nd")
 
 
 tp_g_maxdis <- summary(tp_g)$distances.summary[2] / 2 # we usually do this
@@ -109,9 +109,9 @@ ap_g <- as.geodata(soil,
                    coords.col = gx_column:gy_column,  
                    data.col = as.numeric(which(names(soil) == "ap")))
 
-plot(ap_g)
-plot(ap_g, trend = "1st")
-plot(ap_g, trend = "2nd")
+#plot(ap_g)
+#plot(ap_g, trend = "1st")
+#plot(ap_g, trend = "2nd")
 
 
 ap_g_maxdis <- summary(ap_g)$distances.summary[2] / 2 # we usually do this
@@ -129,9 +129,9 @@ ph_g <- as.geodata(soil,
                    coords.col = gx_column:gy_column,  
                    data.col = as.numeric(which(names(soil) == "ph")))
 
-plot(ph_g)
-plot(ph_g, trend = "1st")
-plot(ph_g, trend = "2nd")
+#plot(ph_g)
+#plot(ph_g, trend = "1st")
+#plot(ph_g, trend = "2nd")
 
 
 ph_g_maxdis <- summary(ph_g)$distances.summary[2] / 2 # we usually do this
