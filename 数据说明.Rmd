@@ -36,16 +36,16 @@ mntd20_weigh : relative nearest taxon phylogenetic diversity
 
 # 其实变量大概可分类为
 
-```{r setup, include=FALSE}
-colnames(reg)
-```
-
 ## 侵染率相关
 qr_AM
 qr_EM
 qr_BZ
 qr_Pn
 qr_Pq
+
+```{r setup, include=FALSE}
+ggpairs(reg_myco, title="correlogram of mycorrhiza") 
+```
 
 ## 生长相关
 TagNew
@@ -58,6 +58,11 @@ Status1
 Status2
 DBH1
 DBH2
+gr_rate
+
+```{r setup, include=FALSE}
+ggpairs(reg_gr, title="correlogram of growth")
+```
 
 ## 根系性状
 AD
@@ -65,6 +70,9 @@ SRL
 SRA
 M_Type
 Type
+```{r setup, include=FALSE}
+ggpairs(reg_root, title="correlogram of root")
+```
 
 ## 树木本身属性
 Genus
@@ -77,6 +85,10 @@ tn
 tp
 ap
 ph
+
+```{r setup, include=FALSE}
+ggpairs(reg_soil, title="correlogram of soil")
+```
 
 ## 谱系
 pd20_unweigh
@@ -95,6 +107,10 @@ mpd50_weigh
 mntd50_unweigh
 mntd50_weigh
 
+```{r setup, include=FALSE}
+ggpairs(reg_phylo, title="correlogram of phylo")
+```
+
 ## 邻体·多样性
 shannon_div_20
 invsimpson_div_20
@@ -105,6 +121,10 @@ simpson_div_10
 shannon_div_50
 invsimpson_div_50
 simpson_div_50
+
+```{r setup, include=FALSE}
+ggpairs(reg_div, title="correlogram of diversity")
+```
 
 ## 邻体·影响力
 BD_20
@@ -117,7 +137,9 @@ BD_50
 CBD_50
 HBD_50
 
-
+```{r setup, include=FALSE}
+ggpairs(reg_gr, title="correlogram of growth")
+```
 
 ## 关于数据获得方法的说明
 ## Introduction of analysis
