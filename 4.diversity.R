@@ -69,10 +69,9 @@ hsd_vegan_beita_20 <- ifelse(hsd_vegan_alpha_20 >= 1, 1, 0)
 #整理一下
 sp_loc <- sp_loc %>% 
   mutate(
-    shannon_div_20 = shannon_div_20$shannon_div_20,
-    invsimpson_div_20 = invsimpson_div_20$invsimpson_div_20,
-    simpson_div_20 = simpson_div_20$simpson_div_20
-  )
+    shannon_div_20 = shannon_div_20,
+    invsimpson_div_20 = invsimpson_div_20,
+    simpson_div_20 = simpson_div_20)
 
 #删掉一些无用的变量
 rm(species_counts,hsd_vegan,hsd_sub,i,invsimpson_div_20,

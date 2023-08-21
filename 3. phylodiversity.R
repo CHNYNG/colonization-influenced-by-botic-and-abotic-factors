@@ -17,7 +17,7 @@ sp_loc <- data.frame(
 )
 
 ##导入系统发育树
-hsd_phytr <- read.tree("Data/hsd_tree_vphylo.rwk")
+hsd_phytr <- read.tree("data/hsd_tree_vphylo.rwk")
 
 #test <- specieslist==test1
 #test1 <- gsub("_", " ",hsd_phytr$tip.label)
