@@ -176,8 +176,10 @@ root_qrl <- root_qrl %>%
 #把正名后的物种加入到大数据里
 
 #读进来物种数据
+unique_species <- unique(HSD_data$Latin)
 load(file =  "data/specieslist.RData")
 root_qrl <- left_join(root_qrl,specieslist[,c("Latin","Genus","Family","Order")],
                       by = "Latin")
 #给物种信息合并菌根类型
 ###先不加，嘤嘤嘤-
+
