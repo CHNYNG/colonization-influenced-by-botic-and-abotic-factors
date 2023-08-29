@@ -108,7 +108,7 @@ p <- ggplot(high_corr_pairs, aes(x = Variable1, y = Variable2, fill = Correlatio
   scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0.8) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Correlation Plot with Significance Annotations")
+  labs(title = "Correlation Plot with Significance Annotations (origin)")
 
 print(p)
 
@@ -131,6 +131,44 @@ for (i in 1:nrow(high_corr_pairs)) {
 print(table_data)
 
 #####
+#这个相关关系可能不适合，换kendall的方法
+#####
+
+cor_matrix_kendall <- cor(numeric_vars, method = "kendall", use = "complete.obs")
+p_values_kendall <- matrix(NA, nrow = ncol(cor_matrix_kendall), ncol = ncol(cor_matrix_kendall))
+for (i in 1:(ncol(cor_matrix_kendall) - 1)) {
+for (j in (i + 1):ncol(cor_matrix_kendall)) {
+cor_test <- cor.test(numeric_vars[, i], numeric_vars[, j], method = "kendall")
+p_values_kendall[i, j] <- cor_test$p.value
+p_values_kendall[j, i] <- cor_test$p.value
+}
+}
+# 将显著性矩阵命名为 p_values_kendall
+colnames(p_values_kendall) <- colnames(cor_matrix_kendall)
+rownames(p_values_kendall) <- colnames(cor_matrix_kendall)
+library(ggplot2)
+
+
+# 创建相关关系图数据框
+high_corr_pairs <- which(cor_matrix_kendall > 0.5 & cor_matrix_kendall < 1, arr.ind = TRUE)
+high_corr_vars <- rownames(cor_matrix_kendall)[high_corr_pairs[, 1]]
+high_corr_pairs <- data.frame(
+Variable1 = high_corr_vars[high_corr_pairs[, 1]],
+Variable2 = colnames(cor_matrix_kendall)[high_corr_pairs[, 2]],
+Correlation = cor_matrix_kendall[high_corr_pairs],
+PValue = p_values_kendall[high_corr_pairs]
+)
+# 创建相关关系图
+p <- ggplot(high_corr_pairs, aes(x = Variable1, y = Variable2, fill = Correlation)) +
+geom_tile() +
+geom_text(aes(label = ifelse(PValue < 0.05, "*", "")), color = "black", size = 6) +
+scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0.8) +
+theme_minimal() +
+theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+labs(title = "Correlation Plot with Significance Annotations (kendall)")
+print(p)
+
+#####
 #标准化一下
 #####
 
@@ -140,7 +178,7 @@ numeric_vars_zscore <- apply(numeric_vars, 2, function(x) (x - mean(x)) / sd(x))
 numeric_vars_zscore <- as.matrix(numeric_vars_zscore)
 
 # 计算相关性矩阵
-cor_matrix <- cor(numeric_vars_zscore, use = "complete.obs")
+cor_matrix <- cor(numeric_vars_zscore, method = "kendall", use = "complete.obs")
 
 # 初始化显著性矩阵
 p_values <- matrix(NA, nrow = ncol(cor_matrix), ncol = ncol(cor_matrix))
@@ -148,7 +186,7 @@ p_values <- matrix(NA, nrow = ncol(cor_matrix), ncol = ncol(cor_matrix))
 # 计算显著性矩阵
 for (i in 1:(ncol(cor_matrix) - 1)) {
   for (j in (i + 1):ncol(cor_matrix)) {
-    cor_test <- cor.test(numeric_vars_zscore[, i], numeric_vars_zscore[, j], method = "pearson")
+    cor_test <- cor.test(numeric_vars_zscore[, i], numeric_vars_zscore[, j], method = "kendall")
     p_values[i, j] <- cor_test$p.value
     p_values[j, i] <- cor_test$p.value
   }
@@ -162,6 +200,7 @@ library(ggplot2)
 
 # 创建相关关系图数据框
 high_corr_pairs <- which(cor_matrix > 0.5 & cor_matrix < 1, arr.ind = TRUE)
+
 high_corr_vars <- rownames(cor_matrix)[high_corr_pairs[, 1]]
 high_corr_pairs <- data.frame(
   Variable1 = high_corr_vars[high_corr_pairs[, 1]],
@@ -177,7 +216,7 @@ p <- ggplot(high_corr_pairs, aes(x = Variable1, y = Variable2, fill = Correlatio
   scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0.8) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Correlation Plot with Significance Annotations")
+  labs(title = "Correlation Plot with Significance Annotations(zscore)")
 
 print(p)
 
