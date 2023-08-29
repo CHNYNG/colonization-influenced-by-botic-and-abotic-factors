@@ -49,10 +49,11 @@ reg <- reg %>%
 #检查一下可能相关的变量的自相关关系
 library(GGally)
 reg_myco <- reg[,c("qr_AM", "qr_EM", "qr_BZ", "qr_Pn","qr_Pq" )]
-ggpairs(reg_myco, title="correlogram of mycorrhiza") 
+p_reg_myco <- ggpairs(reg_myco, title="correlogram of mycorrhiza") 
 #qr_AM与qr_BZ、qr_Pn不显著
 #qr_EM与qr_BZ、qr_Pn、qr_Pq均不显著
 #qr_Pn与qr_Pq不显著
+ggsave("pic/p_reg_myco.pdf", plot = p_reg_myco, width = 11.69, height = 8.27, units = "in", device = "pdf")
 
 #关于生长的变量需要再算一个growth_rate
 reg <- reg %>%
@@ -61,39 +62,47 @@ reg <- reg %>%
                        growth_rate))
 
 reg_gr <- reg[,c("DBH1", "DBH2", "growth_rate")]
-ggpairs(reg_gr, title="correlogram of growth")
+p_reg_gr<- ggpairs(reg_gr, title="correlogram of growth")
 #三者相关性显著
+ggsave("pic/p_reg_gr.pdf", plot = p_reg_gr, width = 11.69, height = 8.27, units = "in", device = "pdf")
+
 
 #关于根系性状的变量的相关
 reg_root <- reg[,c("AD", "SRL", "SRA")]
-ggpairs(reg_root, title="correlogram of root")
+p_reg_root <- ggpairs(reg_root, title="correlogram of root")
 #三者相关性显著
+ggsave("pic/p_reg_root.pdf", plot = p_reg_root, width = 11.69, height = 8.27, units = "in", device = "pdf")
+
 
 #关于土壤元素
 reg_soil <- reg[,c("soc", "tn", "tp", "ap", "ph")]
-ggpairs(reg_soil, title="correlogram of soil")
+p_reg_soil <- ggpairs(reg_soil, title="correlogram of soil")
 #其中ap和soc的相关性不显著
+ggsave("pic/p_reg_soil.pdf", plot = p_reg_soil, width = 11.69, height = 8.27, units = "in", device = "pdf")
 
 #关于谱系（我好懒，想把它们搞一起
 reg_phylo <- reg[,c("pd20_unweigh", "mpd20_unweigh", "mpd20_weigh", "mntd20_unweigh", "mntd20_weigh",
                     "pd10_unweigh", "mpd10_unweigh", "mpd10_weigh", "mntd10_unweigh", "mntd10_weigh",
                     "pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh")]
 
-ggpairs(reg_phylo, title="correlogram of phylo")
-
+p_reg_phylo <- ggpairs(reg_phylo, title="correlogram of phylo")
+ggsave("pic/p_reg_phylo.pdf", plot = p_reg_phylo, width = 11.69, height = 8.27, units = "in", device = "pdf")
 
 #关于邻体多样性
 reg_div <- reg[,c("shannon_div_20", "invsimpson_div_20", "simpson_div_20",
                   "shannon_div_10", "invsimpson_div_10", "simpson_div_10",
                   "shannon_div_50", "invsimpson_div_50", "simpson_div_50",)]
 
-ggpairs(reg_div, title="correlogram of div")
+p_reg_div <- ggpairs(reg_div, title="correlogram of divsity")
+ggsave("pic/p_reg_div.pdf", plot = p_reg_div, width = 11.69, height = 8.27, units = "in", device = "pdf")
 
+#关于邻体影响力
+reg_nei <- reg[,c("BD_20", "CBD_20", "HBD_20",
+                  "BD_10", "CBD_10", "HBD_10",
+                  "BD_50", "CBD_50", "HBD_50")]
 
-
-
-
-
+p_reg_nei <- ggpairs(reg_nei, title="correlogram of neighbors")
+ggsave("pic/p_reg_nei.pdf", plot = p_reg_nei, width = 11.69, height = 8.27, units = "in", device = "pdf")
 
 correlation_matrix <- cor(reg[,14:37])
 # 查看相关性矩阵
