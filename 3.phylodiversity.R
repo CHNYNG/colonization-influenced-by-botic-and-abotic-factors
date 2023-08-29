@@ -1,6 +1,6 @@
 #####
 #加载前步骤
-#source("2.krige.R")
+source("2.krige.R")
 
 # 系统发育
 library(picante)
@@ -17,7 +17,7 @@ sp_loc <- data.frame(
 )
 
 ##导入系统发育树
-hsd_phytr <- read.tree("Data/hsd_tree_vphylo.rwk")
+hsd_phytr <- read.tree("data/hsd_tree_vphylo.rwk")
 
 #test <- specieslist==test1
 #test1 <- gsub("_", " ",hsd_phytr$tip.label)
@@ -64,136 +64,17 @@ hsd_alive_singlebr <- hsd_alive %>%
 
 ##一个看不懂的循环
 # loops ----
+pd50_unweigh <- c();
+mpd50_unweigh <- c(); mpd50_weigh <- c()
+mntd50_unweigh <- c(); mntd50_weigh <- c()
+
 pd20_unweigh <- c();
 mpd20_unweigh <- c(); mpd20_weigh <- c()
 mntd20_unweigh <- c(); mntd20_weigh <- c()
 
-for (i in 1:dim(sp_loc)[1]) {
-  
-  # 20m circle
-  hsd_sub <- hsd_alive_singlebr %>% 
-    filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 20)
-  
-  # phylo tree with species in 20m circle
-  tr_sub <- hsd_phytr %>%
-    drop.tip(setdiff(hsd_phytr$tip.label, unique(hsd_sub$scientific.name)))
-  
-  # abundance-un-weighted phylo 
-  # pd
-  pd20_unweigh[i] <- sum(tr_sub$edge.length)
-  
-  # mpd
-  tr_sub_dis <- cophenetic(tr_sub)
-  tr_sub_dis <- tr_sub_dis[lower.tri(tr_sub_dis, diag = FALSE)]
-  mpd20_unweigh[i] <- mean(tr_sub_dis)
-  
-  # mntd
-  tr_sub_dis2 <- cophenetic(tr_sub)
-  diag(tr_sub_dis2) <- NA
-  mntd20_unweigh[i] <- mean(apply(tr_sub_dis2, 2, min, na.rm = TRUE))
-  
-  # abundance-weighted phylo
-  hsd_sub_sub <- hsd_sub %>% 
-    filter(scientific.name %in% tr_sub$tip.label)
-  
-  tr_sub_community <-
-    matrix(table(hsd_sub_sub$scientific.name), 
-           nrow = 1, 
-           dimnames = list("s1", names(table(hsd_sub_sub$scientific.name))))
-  # mpd
-  mpd20_weigh[i] <- picante::mpd(tr_sub_community, cophenetic(tr_sub),
-                                 abundance.weighted = TRUE)
-  # mntd
-  mntd20_weigh[i] <- picante::mntd(tr_sub_community, cophenetic(tr_sub),
-                                   abundance.weighted = TRUE)
-}
-
-# data frame ----
-sp_loc <- sp_loc %>% 
-  mutate(
-    pd20_unweigh = pd20_unweigh,
-    mpd20_unweigh = mpd20_unweigh,
-    mpd20_weigh = mpd20_weigh,
-    mntd20_unweigh = mntd20_unweigh,
-    mntd20_weigh = mntd20_weigh,
-  )
-
-######
-#之后把10/50的也跑出来
-#####
-#删掉一些中间变量
-rm(hsd_sub,hsd_sub_sub,
-   tr_sub,tr_sub_community,tr_sub_dis2,i,
-   mntd20_unweigh,mntd20_weigh,mpd20_unweigh,
-   mpd20_weigh,pd20_unweigh,tr_sub_dis)
-
-#####
-#下面是10
 pd10_unweigh <- c();
 mpd10_unweigh <- c(); mpd10_weigh <- c()
 mntd10_unweigh <- c(); mntd10_weigh <- c()
-
-for (i in 1:dim(sp_loc)[1]) {
-  
-  # 10m circle
-  hsd_sub <- hsd_alive_singlebr %>% 
-    filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 10)
-  
-  # phylo tree with species in 10m circle
-  tr_sub <- hsd_phytr %>%
-    drop.tip(setdiff(hsd_phytr$tip.label, unique(hsd_sub$scientific.name)))
-  
-  # abundance-un-weighted phylo 
-  # pd
-  pd10_unweigh[i] <- sum(tr_sub$edge.length)
-  
-  # mpd
-  tr_sub_dis <- cophenetic(tr_sub)
-  tr_sub_dis <- tr_sub_dis[lower.tri(tr_sub_dis, diag = FALSE)]
-  mpd10_unweigh[i] <- mean(tr_sub_dis)
-  
-  # mntd
-  tr_sub_dis2 <- cophenetic(tr_sub)
-  diag(tr_sub_dis2) <- NA
-  mntd10_unweigh[i] <- mean(apply(tr_sub_dis2, 2, min, na.rm = TRUE))
-  
-  # abundance-weighted phylo
-  hsd_sub_sub <- hsd_sub %>% 
-    filter(scientific.name %in% tr_sub$tip.label)
-  
-  tr_sub_community <-
-    matrix(table(hsd_sub_sub$scientific.name), 
-           nrow = 1, 
-           dimnames = list("s1", names(table(hsd_sub_sub$scientific.name))))
-  # mpd
-  mpd10_weigh[i] <- picante::mpd(tr_sub_community, cophenetic(tr_sub),
-                                 abundance.weighted = TRUE)
-  # mntd
-  mntd10_weigh[i] <- picante::mntd(tr_sub_community, cophenetic(tr_sub),
-                                   abundance.weighted = TRUE)
-}
-
-# data frame ----
-sp_loc <- sp_loc %>% 
-  mutate(
-    pd10_unweigh = pd10_unweigh,
-    mpd10_unweigh = mpd10_unweigh,
-    mpd10_weigh = mpd10_weigh,
-    mntd10_unweigh = mntd10_unweigh,
-    mntd10_weigh = mntd10_weigh,
-  )
-
-#删掉一些中间变量
-rm(hsd_sub,hsd_sub_sub,
-   tr_sub,tr_sub_community,tr_sub_dis2,i,
-   mntd10_unweigh,mntd10_weigh,mpd10_unweigh,
-   mpd10_weigh,pd10_unweigh,tr_sub_dis)
-
-#####
-#下面是50
-pd50_unweigh <- c();
-mpd50_unweigh <- c(); mpd50_weigh <- c()
-mntd50_unweigh <- c(); mntd50_weigh <- c()
 
 for (i in 1:dim(sp_loc)[1]) {
   
@@ -220,19 +101,97 @@ for (i in 1:dim(sp_loc)[1]) {
   mntd50_unweigh[i] <- mean(apply(tr_sub_dis2, 2, min, na.rm = TRUE))
   
   # abundance-weighted phylo
-  hsd_sub_sub <- hsd_sub %>% 
+  hsd_sub_weigh <- hsd_sub %>% 
     filter(scientific.name %in% tr_sub$tip.label)
   
   tr_sub_community <-
-    matrix(table(hsd_sub_sub$scientific.name), 
+    matrix(table(hsd_sub_weigh$scientific.name), 
            nrow = 1, 
-           dimnames = list("s1", names(table(hsd_sub_sub$scientific.name))))
+           dimnames = list("s1", names(table(hsd_sub_weigh$scientific.name))))
   # mpd
   mpd50_weigh[i] <- picante::mpd(tr_sub_community, cophenetic(tr_sub),
                                  abundance.weighted = TRUE)
   # mntd
   mntd50_weigh[i] <- picante::mntd(tr_sub_community, cophenetic(tr_sub),
                                    abundance.weighted = TRUE)
+
+
+    
+  # 20m circle
+  hsd_sub_sub <- hsd_sub %>% 
+    filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 20)
+  
+  # phylo tree with species in 20m circle
+  tr_sub_sub <- hsd_phytr %>%
+    drop.tip(setdiff(hsd_phytr$tip.label, unique(hsd_sub_sub$scientific.name)))
+  
+  # abundance-un-weighted phylo 
+  # pd
+  pd20_unweigh[i] <- sum(tr_sub_sub$edge.length)
+  
+  # mpd
+  tr_sub_sub_dis <- cophenetic(tr_sub_sub)
+  tr_sub_sub_dis <- tr_sub_sub_dis[lower.tri(tr_sub_sub_dis, diag = FALSE)]
+  mpd20_unweigh[i] <- mean(tr_sub_sub_dis)
+  
+  # mntd
+  tr_sub_sub_dis2 <- cophenetic(tr_sub_sub)
+  diag(tr_sub_sub_dis2) <- NA
+  mntd20_unweigh[i] <- mean(apply(tr_sub_sub_dis2, 2, min, na.rm = TRUE))
+  
+  # abundance-weighted phylo
+  hsd_sub_sub_weigh <- hsd_sub_sub %>% 
+    filter(scientific.name %in% tr_sub_sub$tip.label)
+  
+  tr_sub_sub_community <-
+    matrix(table(hsd_sub_sub_weigh$scientific.name), 
+           nrow = 1, 
+           dimnames = list("s1", names(table(hsd_sub_sub_weigh$scientific.name))))
+  # mpd
+  mpd20_weigh[i] <- picante::mpd(tr_sub_sub_community, cophenetic(tr_sub_sub),
+                                 abundance.weighted = TRUE)
+  # mntd
+  mntd20_weigh[i] <- picante::mntd(tr_sub_sub_community, cophenetic(tr_sub_sub),
+                                   abundance.weighted = TRUE)
+  
+  
+  
+  # 10m circle
+  hsd_sub_sub_sub <- hsd_sub_sub %>% 
+    filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 20)
+  
+  tr_sub_sub_sub <- hsd_phytr %>%
+    drop.tip(setdiff(hsd_phytr$tip.label, unique(hsd_sub_sub_sub$scientific.name)))
+  
+  # abundance-un-weighted phylo 
+  # pd
+  pd10_unweigh[i] <- sum(tr_sub_sub_sub$edge.length)
+  
+  # mpd
+  tr_sub_sub_sub_dis <- cophenetic(tr_sub_sub_sub)
+  tr_sub_sub_sub_dis <- tr_sub_sub_sub_dis[lower.tri(tr_sub_sub_sub_dis, diag = FALSE)]
+  mpd10_unweigh[i] <- mean(tr_sub_sub_sub_dis)
+  
+  # mntd
+  tr_sub_sub_sub_dis2 <- cophenetic(tr_sub_sub_sub)
+  diag(tr_sub_sub_sub_dis2) <- NA
+  mntd10_unweigh[i] <- mean(apply(tr_sub_sub_sub_dis2, 2, min, na.rm = TRUE))
+  
+  # abundance-weighted phylo
+  hsd_sub_sub_sub_weigh <- hsd_sub_sub_sub %>% 
+    filter(scientific.name %in% tr_sub_sub_sub$tip.label)
+  
+  tr_sub_sub_sub_community <-
+    matrix(table(hsd_sub_sub_sub_weigh$scientific.name), 
+           nrow = 1, 
+           dimnames = list("s1", names(table(hsd_sub_sub_sub_weigh$scientific.name))))
+  # mpd
+  mpd10_weigh[i] <- picante::mpd(tr_sub_sub_sub_community, cophenetic(tr_sub_sub_sub),
+                                 abundance.weighted = TRUE)
+  # mntd
+  mntd10_weigh[i] <- picante::mntd(tr_sub_sub_sub_community, cophenetic(tr_sub_sub_sub),
+                                   abundance.weighted = TRUE)
+  
 }
 
 # data frame ----
@@ -243,10 +202,31 @@ sp_loc <- sp_loc %>%
     mpd50_weigh = mpd50_weigh,
     mntd50_unweigh = mntd50_unweigh,
     mntd50_weigh = mntd50_weigh,
+    pd20_unweigh = pd20_unweigh,
+    mpd20_unweigh = mpd20_unweigh,
+    mpd20_weigh = mpd20_weigh,
+    mntd20_unweigh = mntd20_unweigh,
+    mntd20_weigh = mntd20_weigh,
+    pd10_unweigh = pd10_unweigh,
+    mpd10_unweigh = mpd10_unweigh,
+    mpd10_weigh = mpd10_weigh,
+    mntd10_unweigh = mntd10_unweigh,
+    mntd10_weigh = mntd10_weigh
   )
 
+######
+#之后把10/50的也跑出来
+#####
 #删掉一些中间变量
-rm(hsd_sub,hsd_sub_sub,
+rm(hsd_sub,hsd_sub_weigh,
    tr_sub,tr_sub_community,tr_sub_dis2,i,
    mntd50_unweigh,mntd50_weigh,mpd50_unweigh,
-   mpd50_weigh,pd50_unweigh,tr_sub_dis)
+   mpd50_weigh,pd50_unweigh,tr_sub_dis,
+   hsd_sub_sub,hsd_sub_sub_weigh,
+   tr_sub_sub,tr_sub_sub_community,tr_sub_sub_dis2,
+   mntd20_unweigh,mntd20_weigh,mpd20_unweigh,
+   mpd20_weigh,pd20_unweigh,tr_sub_sub_dis,
+   hsd_sub_sub_sub,hsd_sub_sub_sub_weigh,
+   tr_sub_sub_sub,tr_sub_sub_sub_community,tr_sub_sub_sub_dis2,
+   mntd10_unweigh,mntd10_weigh,mpd10_unweigh,
+   mpd10_weigh,pd10_unweigh,tr_sub_sub_sub_dis)

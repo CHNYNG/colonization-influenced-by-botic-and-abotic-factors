@@ -163,17 +163,23 @@ root_qrl <- root_qrl %>%
 ###这里用species来merge一下数据库里的菌根类型
 ##### 给数据库加载物种信息
 #library(devtools)
+#这几个包服务器都加载不了，所以用电脑把数据抠出来，在存进来导入
 #install_github("helixcn/plantlist", build_vignettes = TRUE)
 #加载plantlist包
-library(plantlist)
+#library(plantlist)
 #先筛选出所有的物种
 # 获取不重复的拉丁名称列
-unique_species <- unique(HSD_data$Latin)
+#unique_species <- unique(HSD_data$Latin)
 
-specieslist <- TPL(unique_species)
-colnames(specieslist) <- c("Latin","Genus","Family","Family_number","Order","Group")
+#specieslist <- TPL(unique_species)
+#colnames(specieslist) <- c("Latin","Genus","Family","Family_number","Order","Group")
 #把正名后的物种加入到大数据里
+
+#读进来物种数据
+unique_species <- unique(HSD_data$Latin)
+load(file =  "data/specieslist.RData")
 root_qrl <- left_join(root_qrl,specieslist[,c("Latin","Genus","Family","Order")],
                       by = "Latin")
 #给物种信息合并菌根类型
 ###先不加，嘤嘤嘤-
+

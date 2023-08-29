@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .Rproj.user
 .Rhistory
 .RData
@@ -11,3 +12,18 @@
 *.txt
 # 忽略 .pdf 文件
 *.pdf
+=======
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.git
+# 忽略 .csv 文件
+*.csv
+
+# 忽略 .RData 文件
+*.RData
+
+# 忽略 .txt 文件
+*.txt
+>>>>>>> 26443777ed9086be7130a97033f3852e9444c867

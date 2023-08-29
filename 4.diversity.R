@@ -1,5 +1,9 @@
 # 数据准备
 #加载数据
+
+#加载前步骤
+source("3.phylodiversity.R")
+
 #load("E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl_soil.RData")
 ####改造一下成为让韦韬师兄不嫌弃的代码，呜呜呜
 #首先是数据，用和phylodiversity的一样就可以
@@ -10,7 +14,7 @@
 #其他多样性好麻烦哦，还是用vegan包吧。。。
 
 ####我的物种在specieslist里
-unique_species <- gsub(" ", "_",unique_species)
+unique_species <- gsub(" ", "_",specieslist$Latin)
 hsd_vegan_alpha_20 <- data.frame(scientific.name = unique_species)
 
 #一共有unique_species294个，把它们作为第一列
@@ -35,7 +39,8 @@ for (i in 1:dim(sp_loc)[1]) {
 }
 #整理一下下
 library(tidyr)
-rownames(hsd_vegan_alpha_20) <- hsd_vegan_alpha_20$scientific.name
+rownames(hsd_vegan_alpha_20) <- as.array(hsd_vegan_alpha_20$scientific.name)
+
 hsd_vegan_alpha_20 <- hsd_vegan_alpha_20[,-1]
 colnames(hsd_vegan_alpha_20) <- sp_loc$TagNew
 hsd_vegan_alpha_20 <- t(hsd_vegan_alpha_20)
@@ -71,8 +76,7 @@ sp_loc <- sp_loc %>%
   mutate(
     shannon_div_20 = shannon_div_20$shannon_div_20,
     invsimpson_div_20 = invsimpson_div_20$invsimpson_div_20,
-    simpson_div_20 = simpson_div_20$simpson_div_20
-  )
+    simpson_div_20 = simpson_div_20$simpson_div_20)
 
 #删掉一些无用的变量
 rm(species_counts,hsd_vegan,hsd_sub,i,invsimpson_div_20,
@@ -213,8 +217,7 @@ sp_loc <- sp_loc %>%
   mutate(
     shannon_div_50 = shannon_div_50$shannon_div_50,
     invsimpson_div_50 = invsimpson_div_50$invsimpson_div_50,
-    simpson_div_50 = simpson_div_50$simpson_div_50
-  )
+    simpson_div_50 = simpson_div_50$simpson_div_50)
 
 #删掉一些无用的变量
 rm(species_counts,hsd_vegan,hsd_sub,i,invsimpson_div_50,
