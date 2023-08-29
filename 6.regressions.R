@@ -2,9 +2,7 @@
 #回归#
 #####
 
-<<<<<<< HEAD
 #把所有的数据集合起来
-
 
 library(dplyr)
 =======
@@ -14,7 +12,7 @@ library(dplyr)
 #source("5.neighbors.R")
 library(dplyr)
 #把所有的数据集合起来
->>>>>>> 26443777ed9086be7130a97033f3852e9444c867
+
 reg <- data.frame()
 reg <- root_qrl %>%
   left_join(soil_pred[, -which(names(soil_pred) %in% c("GX", "GY"))],
@@ -39,12 +37,9 @@ reg <- reg %>%
 #重命名一下数据框
   rename(AD = AvgDiam)%>%
 #把概率NA的列转为0
-<<<<<<< HEAD
   mutate(qr_AM = coalesce(qr_AM, 0),
-=======
   mutate(GX = as.numeric(as.character(GX)),
          qr_AM = coalesce(qr_AM, 0),
->>>>>>> 26443777ed9086be7130a97033f3852e9444c867
          qr_EM = coalesce(qr_EM, 0),
          qr_BZ = coalesce(qr_BZ, 0),
          qr_Pn = coalesce(qr_Pn, 0),
@@ -55,7 +50,6 @@ reg <- reg %>%
          DBH1 =coalesce(DBH1, 0))#%>%
   #删除H和DBH1为NA的行
   #filter(!is.na(H))
-<<<<<<< HEAD
 
 
 

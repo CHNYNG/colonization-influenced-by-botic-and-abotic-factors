@@ -1,6 +1,6 @@
 ##### 
 #加载前步骤
-source("1.colonization_data_caculate.R")
+#source("1.colonization_data_caculate.R")
 
 ##### 
 #土壤差值

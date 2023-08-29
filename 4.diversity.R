@@ -2,7 +2,7 @@
 #加载数据
 
 #加载前步骤
-source("3.phylodiversity.R")
+#source("3.phylodiversity.R")
 
 #load("E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl_soil.RData")
 ####改造一下成为让韦韬师兄不嫌弃的代码，呜呜呜

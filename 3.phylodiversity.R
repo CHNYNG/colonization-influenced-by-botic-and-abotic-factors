@@ -1,6 +1,6 @@
 #####
 #加载前步骤
-source("2.krige.R")
+#source("2.krige.R")
 
 # 系统发育
 library(picante)
