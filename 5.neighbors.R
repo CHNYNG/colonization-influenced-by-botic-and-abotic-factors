@@ -3,7 +3,7 @@
 #数据集加一列
 
 #加载前步骤
-source("4.diversity.R")
+#source("4.diversity.R")
 
 #####
 #下面为不分同种异种的BD

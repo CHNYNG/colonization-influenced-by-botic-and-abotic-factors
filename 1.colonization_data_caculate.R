@@ -176,6 +176,7 @@ root_qrl <- root_qrl %>%
 #把正名后的物种加入到大数据里
 
 #读进来物种数据
+#这个unique_species之后还会用到
 unique_species <- unique(HSD_data$Latin)
 load(file =  "data/specieslist.RData")
 root_qrl <- left_join(root_qrl,specieslist[,c("Latin","Genus","Family","Order")],

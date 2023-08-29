@@ -43,6 +43,12 @@ qr_BZ
 qr_Pn
 qr_Pq
 
+<<<<<<< HEAD
+```{r setup, include=FALSE}
+ggpairs(reg_myco, title="correlogram of mycorrhiza") 
+```
+=======
+>>>>>>> 26443777ed9086be7130a97033f3852e9444c867
 
 ## 生长相关
 TagNew
@@ -57,6 +63,12 @@ DBH1
 DBH2
 gr_rate
 
+<<<<<<< HEAD
+```{r setup, include=FALSE}
+ggpairs(reg_gr, title="correlogram of growth")
+```
+=======
+>>>>>>> 26443777ed9086be7130a97033f3852e9444c867
 
 ## 根系性状
 AD
@@ -64,6 +76,9 @@ SRL
 SRA
 M_Type
 Type
+```{r setup, include=FALSE}
+ggpairs(reg_root, title="correlogram of root")
+```
 
 
 ## 树木本身属性
@@ -78,6 +93,12 @@ tp
 ap
 ph
 
+<<<<<<< HEAD
+```{r setup, include=FALSE}
+ggpairs(reg_soil, title="correlogram of soil")
+```
+=======
+>>>>>>> 26443777ed9086be7130a97033f3852e9444c867
 
 ## 谱系
 pd20_unweigh
@@ -96,6 +117,12 @@ mpd50_weigh
 mntd50_unweigh
 mntd50_weigh
 
+<<<<<<< HEAD
+```{r setup, include=FALSE}
+ggpairs(reg_phylo, title="correlogram of phylo")
+```
+=======
+>>>>>>> 26443777ed9086be7130a97033f3852e9444c867
 
 ## 邻体·多样性
 shannon_div_20
@@ -108,6 +135,12 @@ shannon_div_50
 invsimpson_div_50
 simpson_div_50
 
+<<<<<<< HEAD
+```{r setup, include=FALSE}
+ggpairs(reg_div, title="correlogram of diversity")
+```
+=======
+>>>>>>> 26443777ed9086be7130a97033f3852e9444c867
 
 ## 邻体·影响力
 BD_20
@@ -120,11 +153,17 @@ BD_50
 CBD_50
 HBD_50
 
+<<<<<<< HEAD
+```{r setup, include=FALSE}
+ggpairs(reg_gr, title="correlogram of growth")
+```
+=======
 ```{r}
 #筛选出其中相关系数大于0.5且p<0.05的变量
 print(table_data)
 ```
 
+>>>>>>> 26443777ed9086be7130a97033f3852e9444c867
 
 
 
