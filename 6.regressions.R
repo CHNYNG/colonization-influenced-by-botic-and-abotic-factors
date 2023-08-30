@@ -38,7 +38,7 @@ reg <- reg %>%
   rename(AD = AvgDiam)%>%
 #把概率NA的列转为0
   mutate(qr_AM = coalesce(qr_AM, 0),
-  mutate(GX = as.numeric(as.character(GX)),
+         GX = as.numeric(as.character(GX)),
          qr_AM = coalesce(qr_AM, 0),
          qr_EM = coalesce(qr_EM, 0),
          qr_BZ = coalesce(qr_BZ, 0),
