@@ -79,8 +79,9 @@ load("data/data_for_reg.RData")
 #未标准化的数据
 #####
 library(ggplot2)
-library(tidyverse)
 library(dplyr)
+library(tidyverse)
+
 
 # 选择数值型变量列
 numeric_vars <- reg[, c("qr_AM", "qr_EM", "qr_BZ", "qr_Pn", "qr_Pq", "GX", "GY", "DBH1", "DBH2", "AD", "SRL", "SRA", "soc", "tn", "tp", "ap", "ph", "pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh", "pd20_unweigh", "mpd20_unweigh", "mpd20_weigh", "mntd20_unweigh", "mntd20_weigh", "pd10_unweigh", "mpd10_unweigh", "mpd10_weigh", "mntd10_unweigh", "mntd10_weigh", "shannon_div_20", "invsimpson_div_20", "simpson_div_20", "shannon_div_10", "invsimpson_div_10", "simpson_div_10", "shannon_div_50", "invsimpson_div_50", "simpson_div_50", "BD_20", "CBD_20", "HBD_20", "BD_10", "CBD_10", "HBD_10", "BD_50", "CBD_50", "HBD_50", "growth_rate")]
@@ -257,7 +258,7 @@ print(table_data)
 library(tidyverse)
 #关于AM的部分
 
-beita_reg <- lm(qr_AM ~ shannon_div_20 + SRL + AD + mpd20_weigh + soc + tn + tp + ap + ph+ DBH2, data = reg)
+beita_reg <- lm(qr_AM ~ shannon_div_20 + SRL + AD + mpd20_weigh + soc + DBH2, data = numeric_vars_zscore)
 step_beita_reg <- step(beita_reg)
 summary(beita_reg)
 summary(step_beita_reg)
