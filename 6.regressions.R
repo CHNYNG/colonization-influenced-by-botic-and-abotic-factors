@@ -50,16 +50,7 @@ reg <- reg %>%
          DBH1 =coalesce(DBH1, 0))#%>%
   #删除H和DBH1为NA的行
   #filter(!is.na(H))
-
-
-
-#####
-#weitao:做回归之前先检查下自相关
-#检查一下可能相关的变量的自相关关系
-
-#β回归
-
-
+#加一列growth_rate
 reg <- reg %>%
   mutate(growth_rate = log(DBH2)/log(DBH1),
          growth_rate = ifelse(is.infinite(growth_rate) | is.nan(growth_rate), 0, growth_rate))
@@ -255,10 +246,13 @@ for (i in 1:nrow(high_corr_pairs)) {
 # 打印提取的表格内容
 print(table_data)
 #β回归
+#原始数据是numeric_vars、zscore的数据是numeric_vars_zscore
+
 library(tidyverse)
 #关于AM的部分
-
-beita_reg <- lm(qr_AM ~ shannon_div_20 + SRL + AD + mpd20_weigh + soc + DBH2, data = numeric_vars_zscore)
+numeric_vars_zscore <- as.data.frame(numeric_vars_zscore)
+beita_reg <- lm(qr_AM ~  
+                  SRL + AD + shannon_div_50 + mpd50_weigh + growth_rate + soc + ap + BD_10 + CBD_10 + HBD_10, data = numeric_vars_zscore)
 step_beita_reg <- step(beita_reg)
 summary(beita_reg)
 summary(step_beita_reg)
