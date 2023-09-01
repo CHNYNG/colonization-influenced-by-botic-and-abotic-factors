@@ -252,7 +252,13 @@ library(tidyverse)
 #关于AM的部分
 numeric_vars_zscore <- as.data.frame(numeric_vars_zscore)
 beita_reg <- lm(qr_AM ~  
-                  SRL + AD + shannon_div_50 + mpd50_weigh + growth_rate + soc + ap + BD_10 + CBD_10 + HBD_10, data = numeric_vars_zscore)
+                  SRL * AD + shannon_div_50 + mpd50_weigh + DBH2 * soc * ap + BD_10 * CBD_10 + HBD_10, data = numeric_vars_zscore)
 step_beita_reg <- step(beita_reg)
 summary(beita_reg)
 summary(step_beita_reg)
+beita_reg <- lm(qr_EM ~  
+                  SRL * AD + shannon_div_50 + mpd50_weigh + DBH2 * soc * ap + BD_10 * CBD_10 + HBD_10, data = numeric_vars_zscore)
+
+
+solve(cor(numeric_vars_zscore))
+cor(numeric_vars_zscore)[which(cor(numeric_vars_zscore) > 0.7)]
