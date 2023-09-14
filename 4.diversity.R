@@ -21,8 +21,11 @@ hsd_vegan_alpha_20 <- data.frame(scientific.name = unique_species)
 for (i in 1:dim(sp_loc)[1]) {
   
   # 20m circle
-  hsd_sub <- hsd_alive_singlebr %>% 
-    filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 20)
+  hsd_sub <- hsd_alive_singlebr %>%
+    mutate(
+      distance = sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2)
+    ) %>%
+    filter(distance > 0 & distance <= 20)
   
   species_counts <- table(hsd_sub$scientific.name) %>%
     as.data.frame() %>%
@@ -37,6 +40,7 @@ for (i in 1:dim(sp_loc)[1]) {
   hsd_vegan_alpha_20[,i+1] <- hsd_vegan$Freq
     
 }
+
 #整理一下下
 library(tidyr)
 rownames(hsd_vegan_alpha_20) <- as.array(hsd_vegan_alpha_20$scientific.name)
@@ -55,20 +59,47 @@ invsimpson_div_20 <- as.data.frame(invsimpson_div_20)
 #辛普森多样性指数（Simpson Diversity Index）
 simpson_div_20 <- diversity(hsd_vegan_alpha_20, index = "simpson")
 simpson_div_20 <- as.data.frame(simpson_div_20)
+
+
 ######整理数据为β多样性矩阵(需要的话)
-hsd_vegan_beita_20 <- ifelse(hsd_vegan_alpha_20 >= 1, 1, 0)
+hsd_vegan_beita_20 <- ifelse(hsd_vegan_alpha_20 >= 0.5, 1, 0)
+hsd_vegan_beita_20 <- as.matrix(hsd_vegan_beita_20)
+
 #计算β多样性指数
 # 计算 Jaccard 相似性指数作为β多样性的距离
-#beta_div_jaccard_20 <- vegdist(hsd_vegan_alpha_20, method = "jaccard")
+beta_div_jaccard_20 <- vegdist(hsd_vegan_beita_20, method = "jaccard")
 
 # 计算 Bray-Curtis 相似性指数作为β多样性的距离
-#beta_div_bray_20 <- vegdist(hsd_vegan_alpha_20, method = "bray")
+beta_div_bray_20 <- vegdist(hsd_vegan_alpha_20, method = "bray")
+beta_div_bray_20_d <- as.data.frame(as.matrix(beta_div_bray_20))
+# 去掉列名中的 "X" 前缀
+colnames(beta_div_bray_20_d) <- gsub("^X", "", colnames(beta_div_bray_20_d))
+# 将行名和列名添加为新列
+beta_div_bray_20_d$RowName <- rownames(beta_div_bray_20_d)
+colnames(beta_div_bray_20_d) <- make.names(colnames(beta_div_bray_20_d))  # 使列名合法
+
+# 将数据框重塑为长格式
+library(reshape2)
+beta_div_bray_20 <- melt(beta_div_bray_20_d, id.vars = "RowName")
+
+# 修改列名
+colnames(beta_div_bray_20) <- c("RowName", "ColName", "Value")
+beta_div_bray_20$ColName <- gsub("^X", "", beta_div_bray_20$ColName)
+# 删除Value为0的行
+beta_div_bray_20 <- beta_div_bray_20 %>%
+  filter(Value != 0)
+
+beta_div_bray_20 <- beta_div_bray_20 %>%
+  mutate(RowName = pmin(RowName, ColName), ColName = pmax(RowName, ColName)) %>%
+  distinct(RowName, ColName, .keep_all = TRUE)
+###嗷嗷嗷嗷嗷嗷！！！终于好了！！！！我好菜…
+
 
 # 计算 Sørensen-Dice 相似性指数作为β多样性的距离
-#beta_div_sorensen_20 <- vegdist(hsd_vegan_alpha_20, method = "kulczynski")
+beta_div_sorensen_20 <- vegdist(hsd_vegan_alpha_20, method = "kulczynski")
 
 # 计算 Euclidean 距离作为β多样性的距离
-#beta_div_euclidean_20 <- vegdist(hsd_vegan_alpha_20, method = "euclidean")
+beta_div_euclidean_20 <- vegdist(hsd_vegan_alpha_20, method = "euclidean")
 
 #####
 #整理一下

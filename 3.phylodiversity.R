@@ -3,19 +3,23 @@
 #source("2.krige.R")
 
 # 系统发育
+
 library(picante)
 library(tidyverse)
 
 #数据集是root_qrl，黑石顶的数据集是HSD_data
 #location of samples
 filtered_root_qrl <- root_qrl %>% 
-  filter(!is.na(GX))
+  filter(!is.na(GX),
+         Branch ==0 )
+filtered_root_qrl <- distinct(filtered_root_qrl)
+
 sp_loc <- data.frame(
   GX = as.numeric(filtered_root_qrl$GX),
   GY = filtered_root_qrl$GY,
   TagNew = filtered_root_qrl$TagNew
 )
-
+sp_loc <- distinct(sp_loc, TagNew, .keep_all = TRUE)
 ##导入系统发育树
 hsd_phytr <- read.tree("data/hsd_tree_vphylo.rwk")
 
@@ -62,6 +66,17 @@ hsd_alive_singlebr <- hsd_alive %>%
   )
 
 
+# 将TagNew列的值尝试转换为数值
+hsd_alive_singlebr <- hsd_alive_singlebr %>%
+  mutate(TagNew = as.numeric(TagNew))
+
+# 过滤掉NA值和为0的值
+hsd_alive_singlebr <- hsd_alive_singlebr %>%
+  filter(!is.na(TagNew)) %>%
+  filter(TagNew != 0) %>%
+  filter(floor(TagNew) == TagNew)
+
+hsd_alive_singlebr$TagNew <- as.character(hsd_alive_singlebr$TagNew)
 ##一个看不懂的循环
 # loops ----
 pd50_unweigh <- c();
@@ -230,3 +245,22 @@ rm(hsd_sub,hsd_sub_weigh,
    tr_sub_sub_sub,tr_sub_sub_sub_community,tr_sub_sub_sub_dis2,
    mntd10_unweigh,mntd10_weigh,mpd10_unweigh,
    mpd10_weigh,pd10_unweigh,tr_sub_sub_sub_dis)
+
+#成对物种间的边长
+library(ape)
+edge_lengths <- cophenetic(hsd_phytr)
+edge_lengths <- as.data.frame(edge_lengths)
+edge_lengths$RowName <- rownames(edge_lengths)
+edge_lengths <- melt(edge_lengths, id.vars = "RowName")
+colnames(edge_lengths) <- c("RowName", "ColName", "Value")
+# 删除Value为0的行
+edge_lengths <- edge_lengths %>%
+  filter(Value != 0)
+edge_lengths <- edge_lengths %>%
+  mutate(
+    RowName = as.character(RowName),
+    ColName = as.character(ColName),
+    RowName = ifelse(RowName < ColName, RowName, ColName),
+    ColName = ifelse(RowName < ColName, ColName, RowName)
+  ) %>% 
+  distinct(RowName, ColName, .keep_all = TRUE)

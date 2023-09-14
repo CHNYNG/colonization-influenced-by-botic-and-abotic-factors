@@ -4,8 +4,6 @@
 
 #把所有的数据集合起来
 
-library(dplyr)
-
 ######
 #加载前步骤
 #####
@@ -55,13 +53,70 @@ reg <- reg %>%
   mutate(growth_rate = log(DBH2)/log(DBH1),
          growth_rate = ifelse(is.infinite(growth_rate) | is.nan(growth_rate), 0, growth_rate))
 
+###
+#把10/20/50分开数据集,把AM=0和EM=0分别数据集，也就是有
+reg_AM_10 <- reg %>%
+  select(-qr_EM, -pd50_unweigh, -mpd50_unweigh, -mpd50_weigh, -mntd50_unweigh,
+         -mntd50_weigh, -pd20_unweigh, -mpd20_unweigh, -mpd20_weigh,
+         -mntd20_unweigh, -mntd20_weigh, -shannon_div_20, -invsimpson_div_20,
+         -simpson_div_20, -shannon_div_50, -invsimpson_div_50,
+         -simpson_div_50, -BD_20, -BD_50, -CBD_20, -CBD_50,-HBD_20, -HBD_50) %>%
+  filter(qr_AM > 0)
+  
+reg_AM_20<- reg %>%
+  select(-qr_EM, -pd50_unweigh, -mpd50_unweigh, -mpd50_weigh, -mntd50_unweigh,
+         -mntd50_weigh, -pd10_unweigh, -mpd10_unweigh, -mpd10_weigh,
+         -mntd10_unweigh, -mntd10_weigh,-shannon_div_10,-invsimpson_div_10,
+         -simpson_div_10,-shannon_div_50,-invsimpson_div_50,
+         -simpson_div_50, -BD_10, -BD_50, -CBD_10, -CBD_50,-HBD_10, -HBD_50) %>%
+  filter(qr_AM > 0)
 
-save(reg, root_qrl, soil_pred, sp_loc, hsd_neighbor, file = "data/data_for_reg.RData")
+reg_AM_50 <- reg %>%
+  select(-qr_EM, -pd20_unweigh, -mpd20_unweigh, -mpd20_weigh, -mntd20_unweigh,
+         -mntd20_weigh, -pd10_unweigh, -mpd10_unweigh, -mpd10_weigh,
+         -mntd10_unweigh, -mntd10_weigh,-shannon_div_10,-invsimpson_div_10,
+         -simpson_div_10,-shannon_div_20,-invsimpson_div_20,
+         -simpson_div_20, -BD_10, -BD_20, -CBD_10, -CBD_20,-HBD_10, -HBD_20) %>%
+  filter(qr_AM > 0)
+
+reg_EM_10 <- reg %>%
+  select(-qr_AM,-qr_BZ,-qr_Pn, -qr_Pq,
+         -pd50_unweigh, -mpd50_unweigh, -mpd50_weigh, -mntd50_unweigh,
+         -mntd50_weigh, -pd20_unweigh, -mpd20_unweigh, -mpd20_weigh,
+         -mntd20_unweigh, -mntd20_weigh, -shannon_div_20, -invsimpson_div_20,
+         -simpson_div_20, -shannon_div_50, -invsimpson_div_50,
+         -simpson_div_50, -BD_20, -BD_50, -CBD_20, -CBD_50,-HBD_20, -HBD_50) %>%
+  filter(qr_EM > 0)
+
+reg_EM_20 <- reg %>%
+  select(-qr_AM,-qr_BZ,-qr_Pn, -qr_Pq,
+         -pd50_unweigh, -mpd50_unweigh, -mpd50_weigh, -mntd50_unweigh,
+         -mntd50_weigh, -pd10_unweigh, -mpd10_unweigh, -mpd10_weigh,
+         -mntd10_unweigh, -mntd10_weigh, -shannon_div_10, -invsimpson_div_10,
+         -simpson_div_10, -shannon_div_50, -invsimpson_div_50,
+         -simpson_div_50, -BD_10, -BD_50, -CBD_10, -CBD_50,-HBD_10, -HBD_50) %>%
+  filter(qr_EM > 0)
+
+reg_EM_50 <- reg %>%
+  select(-qr_AM,-qr_BZ,-qr_Pn, -qr_Pq,
+         -pd20_unweigh, -mpd20_unweigh, -mpd20_weigh, -mntd20_unweigh,
+         -mntd20_weigh, -pd10_unweigh, -mpd10_unweigh, -mpd10_weigh,
+         -mntd10_unweigh, -mntd10_weigh, -shannon_div_10, -invsimpson_div_10,
+         -simpson_div_10, -shannon_div_20, -invsimpson_div_20,
+         -simpson_div_20, -BD_10, -BD_20, -CBD_10, -CBD_20,-HBD_10, -HBD_20) %>%
+  filter(qr_EM > 0)
+
+
+
+save(reg, reg_AM_10, reg_AM_20, reg_AM_50, 
+     reg_EM_10, reg_EM_20, reg_EM_50,
+     root_qrl, soil_pred, sp_loc, hsd_neighbor, file = "data/data_for_reg.RData")
 #####
 #加载之前数据
 #####
 
-load("data/data_for_reg.RData")
+#load("data/data_for_reg.RData")
+
 
 #####
 #weitao:做回归之前先检查下自相关
@@ -75,190 +130,146 @@ library(tidyverse)
 
 
 # 选择数值型变量列
-numeric_vars <- reg[, c("qr_AM", "qr_EM", "qr_BZ", "qr_Pn", "qr_Pq", "GX", "GY", "DBH1", "DBH2", "AD", "SRL", "SRA", "soc", "tn", "tp", "ap", "ph", "pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh", "pd20_unweigh", "mpd20_unweigh", "mpd20_weigh", "mntd20_unweigh", "mntd20_weigh", "pd10_unweigh", "mpd10_unweigh", "mpd10_weigh", "mntd10_unweigh", "mntd10_weigh", "shannon_div_20", "invsimpson_div_20", "simpson_div_20", "shannon_div_10", "invsimpson_div_10", "simpson_div_10", "shannon_div_50", "invsimpson_div_50", "simpson_div_50", "BD_20", "CBD_20", "HBD_20", "BD_10", "CBD_10", "HBD_10", "BD_50", "CBD_50", "HBD_50", "growth_rate")]
-
-# 提取数值列
-numeric_vars <- as.matrix(numeric_vars)
+numeric_vars <- reg_AM_50[, c("qr_AM","qr_BZ", "qr_Pn", "qr_Pq",
+                              #"qr_EM",
+                              "GX", "GY", "DBH1", "DBH2",
+                              "AD", "SRL", "SRA",
+                              "soc", "tn", "tp", "ap", "ph",
+                              "pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh",
+                              #"pd20_unweigh", "mpd20_unweigh", "mpd20_weigh", "mntd20_unweigh", "mntd20_weigh",
+                              #"pd10_unweigh", "mpd10_unweigh", "mpd10_weigh", "mntd10_unweigh", "mntd10_weigh",
+                              #"shannon_div_20", "invsimpson_div_20", "simpson_div_20",
+                              #"shannon_div_10", "invsimpson_div_10", "simpson_div_10",
+                              "shannon_div_50", "invsimpson_div_50", "simpson_div_50",
+                              #"BD_20", "CBD_20", "HBD_20",
+                              #"BD_10", "CBD_10", "HBD_10",
+                              "BD_50", "CBD_50", "HBD_50",
+                              "growth_rate")]
+library(ggplot2)
+library(reshape2)
 
 # 计算相关性矩阵
-cor_matrix <- cor(numeric_vars, use = "complete.obs")
 
-# 初始化显著性矩阵
-p_values <- matrix(NA, nrow = ncol(cor_matrix), ncol = ncol(cor_matrix))
+cor_matrix <- cor(numeric_vars, use = "complete.obs", method = "spearman")
 
-# 计算显著性矩阵
-for (i in 1:(ncol(cor_matrix) - 1)) {
-  for (j in (i + 1):ncol(cor_matrix)) {
-    cor_test <- cor.test(numeric_vars[, i], numeric_vars[, j], method = "pearson")
-    p_values[i, j] <- cor_test$p.value
-    p_values[j, i] <- cor_test$p.value
-  }
-}
+# 将相关性矩阵转换为长格式
+cor_data <- melt(cor_matrix)
 
-# 将显著性矩阵命名为 p_values
-colnames(p_values) <- colnames(cor_matrix)
-rownames(p_values) <- colnames(cor_matrix)
-
-library(ggplot2)
-
-# 创建相关关系图数据框
-high_corr_pairs <- which(cor_matrix > 0.5 & cor_matrix < 1, arr.ind = TRUE)
-high_corr_vars <- rownames(cor_matrix)[high_corr_pairs[, 1]]
-high_corr_pairs <- data.frame(
-  Variable1 = high_corr_vars[high_corr_pairs[, 1]],
-  Variable2 = colnames(cor_matrix)[high_corr_pairs[, 2]],
-  Correlation = cor_matrix[high_corr_pairs],
-  PValue = p_values[high_corr_pairs]
-)
-
-# 创建相关关系图
-p <- ggplot(high_corr_pairs, aes(x = Variable1, y = Variable2, fill = Correlation)) +
+# 创建相关性图
+p <- ggplot(cor_data, aes(Var1, Var2, fill = value)) +
   geom_tile() +
-  geom_text(aes(label = ifelse(PValue < 0.05, "*", "")), color = "black", size = 6) +
-  scale_fill_gradient2(low = "#e5f5f9", mid = "#99d8c9", high = "#2ca25f", midpoint = 0.8) +
+  scale_fill_gradient2(low = "#fc9272", mid = "#f7fcb9", high = "#31a354", midpoint = 0) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Correlation Plot with Significance Annotations (origin)")
-
+  labs(title = "Correlation Plot (EM_10)") +
+  # 添加相关系数标签
+ # geom_text(aes(label = round(value, 2)), vjust = 1, size = 3, color = "black")+
+  
+  geom_text(aes(label = ifelse(cor_data$value > 0.9 & cor_data$value < 1, paste0(round(cor_data$value, 2), "*"), round(cor_data$value, 2))), 
+            vjust = 1, size = 3, color = ifelse(cor_data$value > 0.9 & cor_data$value < 1, "red", "black"), show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  # 调整横坐标字体大小
+        axis.text.y = element_text(size = 12),  # 调整纵坐标字体大小
+        axis.title.x = element_blank(),  # 去掉横坐标标题
+        axis.title.y = element_blank())  # 去掉纵坐标标题
 print(p)
+ggsave("pic/correlation_plot_EM_10.pdf", p, width = 24, height = 12)
 
-###为便于查看，把它制作成表格
-# 创建一个空的数据框来存储表格内容
-table_data <- data.frame(Variable1 = character(0), Variable2 = character(0), Correlation = numeric(0), PValue = numeric(0))
+library(randomForest)
+####使用随机森林选择变量
+# 使用你的数据集和目标变量
+set.seed(0725)
+env_rf <- randomForest(qr_AM ~ ., 
+                       data = numeric_vars, ntree = 1000)
+print(env_rf)
 
-# 提取高相关性变量对及其相关性和显著性值
-for (i in 1:nrow(high_corr_pairs)) {
-  row <- high_corr_pairs[i, ]
-  cor_val <- row$Correlation
-  p_val <- row$PValue
-  variable1 <- row$Variable1
-  variable2 <- row$Variable2
-  new_row <- data.frame(Variable1 = variable1, Variable2 = variable2, Correlation = cor_val, PValue = p_val)
-  table_data <- rbind(table_data, new_row)
-}
+# 进行参数调优
+mtry <- tuneRF(
+  numeric_vars,
+  numeric_vars$qr_AM,
+  ntreeTry = 1000,
+  stepFactor = 1.5,
+  improve = 0.01,
+  trace = TRUE,
+  plot = TRUE
+)
 
-# 打印提取的表格内容
-print(table_data)
+best_m <- mtry[mtry[, 2] == min(mtry[, 2]), 1]
+print(mtry) # best_m with lowest oob error
+print(best_m)
 
-#####
-#这个相关关系可能不适合，换kendall的方法
-#####
-
-cor_matrix_kendall <- cor(numeric_vars, method = "kendall", use = "complete.obs")
-p_values_kendall <- matrix(NA, nrow = ncol(cor_matrix_kendall), ncol = ncol(cor_matrix_kendall))
-for (i in 1:(ncol(cor_matrix_kendall) - 1)) {
-  for (j in (i + 1):ncol(cor_matrix_kendall)) {
-    cor_test <- cor.test(numeric_vars[, i], numeric_vars[, j], method = "kendall")
-    p_values_kendall[i, j] <- cor_test$p.value
-    p_values_kendall[j, i] <- cor_test$p.value
-}
-}
-# 将显著性矩阵命名为 p_values_kendall
-colnames(p_values_kendall) <- colnames(cor_matrix_kendall)
-rownames(p_values_kendall) <- colnames(cor_matrix_kendall)
-
-# 创建相关关系图数据框
-high_corr_pairs <- which(cor_matrix_kendall > 0.5 & cor_matrix_kendall < 1, arr.ind = TRUE)
-high_corr_vars <- rownames(cor_matrix_kendall)[high_corr_pairs[, 1]]
-high_corr_pairs <- data.frame(
-  Variable1 = high_corr_vars[high_corr_pairs[, 1]],
-  Variable2 = colnames(cor_matrix_kendall)[high_corr_pairs[, 2]],
-  Correlation = cor_matrix_kendall[high_corr_pairs],
-  PValue = p_values_kendall[high_corr_pairs]
+# 使用最佳的mtry值重新训练模型
+env_rf_mtry <-
+  randomForest(
+    qr_AM ~ .,
+    data = numeric_vars,
+    mtry = best_m,
+    importance = TRUE,
+    ntree = 1000
   )
-# 创建相关关系图
-p <- ggplot(high_corr_pairs, aes(x = Variable1, y = Variable2, fill = Correlation)) +
-geom_tile() +
-geom_text(aes(label = ifelse(PValue < 0.05, "*", "")), color = "black", size = 6) +
-scale_fill_gradient2(low = "#e5f5f9", mid = "#99d8c9", high = "#2ca25f", midpoint = 0.8) +
-theme_minimal() +
-theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-labs(title = "Correlation Plot with Significance Annotations (kendall)")
-print(p)
+print(env_rf_mtry)
 
-#####
-#标准化一下
-#####
+# 可以继续使用你的代码进行特征选择
+varImpPlot(env_rf_mtry)
+var_ip <- importance(env_rf_mtry) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("variables") %>% 
+  rename(
+    'percentage_increase_in_MSE' = `%IncMSE`
+  ) %>% 
+  arrange(desc(percentage_increase_in_MSE)) %>% 
+  head(10)
+var_ip
 
-numeric_vars_zscore <- apply(numeric_vars, 2, function(x) (x - mean(x)) / sd(x))
+numeric_vars <- as.data.frame(numeric_vars)
 
-# 提取数值列
-numeric_vars_zscore <- as.matrix(numeric_vars_zscore)
+numeric_vars$qr_AM <- ifelse(numeric_vars$qr_AM <= 0, 0.01, ifelse(numeric_vars$qr_AM >= 1, 0.99, numeric_vars$qr_AM))
+numeric_vars$qr_EM <- ifelse(numeric_vars$qr_EM >= 1, 0.99, numeric_vars$qr_EM)
 
-# 计算相关性矩阵
-cor_matrix_zscore <- cor(numeric_vars_zscore, method = "kendall", use = "complete.obs")
+library(betareg)
+#AM_10
+beita_model_forest <- betareg(qr_AM ~
+                                AD + mpd50_weigh + tp + SRA + GY + DBH2 + CBD_50 + DBH1 + ap + soc, data = numeric_vars, link = "logit")
+#EM_10
+beita_model_forest <- betareg(qr_EM ~
+                         soc + mpd10_unweigh + tn + pd10_unweigh + DBH1 + shannon_div_10 + invsimpson_div_10 + GX, data = numeric_vars, link = "logit")
 
-# 初始化显著性矩阵
-p_values_zscore <- matrix(NA, nrow = ncol(cor_matrix_zscore), ncol = ncol(cor_matrix_zscore))
-
-# 计算显著性矩阵
-for (i in 1:(ncol(cor_matrix_zscore) - 1)) {
-  for (j in (i + 1):ncol(cor_matrix_zscore)) {
-    cor_test <- cor.test(numeric_vars_zscore[, i], numeric_vars_zscore[, j], method = "kendall")
-    p_values_zscore[i, j] <- cor_test$p.value
-    p_values_zscore[j, i] <- cor_test$p.value
-  }
-}
-
-# 将显著性矩阵命名为 p_values_zscore
-colnames(p_values_zscore) <- colnames(cor_matrix_zscore)
-rownames(p_values_zscore) <- colnames(cor_matrix_zscore)
-
-library(ggplot2)
-
-# 创建相关关系图数据框
-high_corr_pairs <- which(cor_matrix_zscore > 0.5 & cor_matrix_zscore < 1, arr.ind = TRUE)
-
-high_corr_vars <- rownames(cor_matrix_zscore)[high_corr_pairs[, 1]]
-high_corr_pairs <- data.frame(
-  Variable1 = high_corr_vars[high_corr_pairs[, 1]],
-  Variable2 = colnames(cor_matrix_zscore)[high_corr_pairs[, 2]],
-  Correlation = cor_matrix_zscore[high_corr_pairs],
-  PValue = p_values_zscore[high_corr_pairs]
-)
-
-# 创建相关关系图
-p <- ggplot(high_corr_pairs, aes(x = Variable1, y = Variable2, fill = Correlation)) +
-  geom_tile() +
-  geom_text(aes(label = ifelse(PValue < 0.05, "*", "")), color = "black", size = 6) +
-  scale_fill_gradient2(low = "#e5f5f9", mid = "#99d8c9", high = "#2ca25f", midpoint = 0.8) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Correlation Plot with Significance Annotations(zscore)")
-
-print(p)
-
-###为便于查看，把它制作成表格
-# 创建一个空的数据框来存储表格内容
-table_data <- data.frame(Variable1 = character(0), Variable2 = character(0), Correlation = numeric(0), PValue = numeric(0))
-
-# 提取高相关性变量对及其相关性和显著性值
-for (i in 1:nrow(high_corr_pairs)) {
-  row <- high_corr_pairs[i, ]
-  cor_val <- row$Correlation
-  p_val <- row$PValue
-  variable1 <- row$Variable1
-  variable2 <- row$Variable2
-  new_row <- data.frame(Variable1 = variable1, Variable2 = variable2, Correlation = cor_val, PValue = p_val)
-  table_data <- rbind(table_data, new_row)
-}
-
-# 打印提取的表格内容
-print(table_data)
-#β回归
-#原始数据是numeric_vars、zscore的数据是numeric_vars_zscore
-
-library(tidyverse)
-#关于AM的部分
-numeric_vars_zscore <- as.data.frame(numeric_vars_zscore)
-beita_reg <- lm(qr_AM ~  
-                  SRL * AD + shannon_div_50 + mpd50_weigh + DBH2 * soc * ap + BD_10 * CBD_10 + HBD_10, data = numeric_vars_zscore)
-step_beita_reg <- step(beita_reg)
-summary(beita_reg)
-summary(step_beita_reg)
-beita_reg <- lm(qr_EM ~  
-                  SRL * AD + shannon_div_50 + mpd50_weigh + DBH2 * soc * ap + BD_10 * CBD_10 + HBD_10, data = numeric_vars_zscore)
+summary(beita_model_forest)
+vif_values <- vif(beita_model_forest)
+print(vif_values)
 
 
-solve(cor(numeric_vars_zscore))
-cor(numeric_vars_zscore)[which(cor(numeric_vars_zscore) > 0.7)]
+beita_model_cor <- betareg(qr_AM ~ 
+                              AD + SRL + soc+ tp + ap + ph + pd50_unweigh +mpd50_unweigh + mpd50_weigh + mntd50_unweigh + mntd50_weigh + shannon_div_50 + BD_50 + CBD_50 , data = numeric_vars, link = "probit")
+beita_model_cor <- betareg(qr_EM ~
+                             DBH2 + AD + SRL + soc+ tp + ap + ph + pd10_unweigh +mpd10_unweigh + mpd10_weigh + mntd10_unweigh + mntd10_weigh + shannon_div_10 + BD_10 + CBD_10 + growth_rate, data = numeric_vars, link = "logit")
+
+summary(beita_model_cor)
+
+vif_values <- vif(beita_model_cor)
+print(vif_values)
+
+
+
+library(lme4)
+
+reg_AM_10$qr_AM <- ifelse(reg_AM_10$qr_AM <= 0, 0.01, ifelse(reg_AM_10$qr_AM >= 1, 0.99, reg_AM_10$qr_AM))
+reg_AM_10$Order <- as.factor(reg_AM_10$Order)
+model <- betareg(qr_AM ~ AD + SRL + soc + tp + ap + ph + pd10_unweigh + mpd10_unweigh + mpd10_weigh + mntd10_unweigh + mntd10_weigh + shannon_div_10 + BD_10 + CBD_10 ,
+                 data = reg_AM_10)
+glmer(qr_AM ~ AD + SRL + soc+ tp + ap + ph + pd10_unweigh +mpd10_unweigh + mpd10_weigh + mntd10_unweigh + mntd10_weigh + shannon_div_10 + BD_10 + CBD_10 + Order , data = reg_AM_10, family = betabinomial(link = "logit"))
+
+# 假设 "Order" 是一个因子型变量
+reg_AM_10$Order <- factor(reg_AM_10$Order)
+
+# 创建虚拟变量
+dummy_vars <- model.matrix(~ Order - 1, data = reg_AM_10)
+
+# 合并虚拟变量到数据框
+reg_AM_10 <- cbind(reg_AM_10, dummy_vars)
+
+# 构建Beta回归模型，包括虚拟变量
+model <- betareg(qr_AM ~ AD * SRL * soc * tp * ap * ph * pd10_unweigh * mpd10_unweigh * mpd10_weigh * mntd10_unweigh * mntd10_weigh * shannon_div_10 * BD_10 * CBD_10 * Order, 
+                 link = "cloglog", data = reg_AM_10)
+
+# 查看模型摘要
+summary(model)
