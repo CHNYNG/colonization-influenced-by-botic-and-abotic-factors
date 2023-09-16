@@ -181,6 +181,16 @@ unique_species <- unique(HSD_data$Latin)
 load(file =  "data/specieslist.RData")
 root_qrl <- left_join(root_qrl,specieslist[,c("Latin","Genus","Family","Order")],
                       by = "Latin")
+###
+#先把branch=0筛出来？不需要那么多
+root_qrl <- root_qrl %>%
+  filter(Branch ==0) %>%
+  select(-Numbers) %>%
+  distinct(TagNew, .keep_all = TRUE) %>%
+  gsub(" ", "_", root_qrl$Latin)
+
+
 #给物种信息合并菌根类型
 ###先不加，嘤嘤嘤-
+
 

@@ -246,21 +246,3 @@ rm(hsd_sub,hsd_sub_weigh,
    mntd10_unweigh,mntd10_weigh,mpd10_unweigh,
    mpd10_weigh,pd10_unweigh,tr_sub_sub_sub_dis)
 
-#成对物种间的边长
-library(ape)
-edge_lengths <- cophenetic(hsd_phytr)
-edge_lengths <- as.data.frame(edge_lengths)
-edge_lengths$RowName <- rownames(edge_lengths)
-edge_lengths <- melt(edge_lengths, id.vars = "RowName")
-colnames(edge_lengths) <- c("RowName", "ColName", "Value")
-# 删除Value为0的行
-edge_lengths <- edge_lengths %>%
-  filter(Value != 0)
-edge_lengths <- edge_lengths %>%
-  mutate(
-    RowName = as.character(RowName),
-    ColName = as.character(ColName),
-    RowName = ifelse(RowName < ColName, RowName, ColName),
-    ColName = ifelse(RowName < ColName, ColName, RowName)
-  ) %>% 
-  distinct(RowName, ColName, .keep_all = TRUE)

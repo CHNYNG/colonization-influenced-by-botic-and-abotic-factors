@@ -9,6 +9,7 @@
 #####
 #source("5.neighbors.R")
 library(dplyr)
+
 #把所有的数据集合起来
 
 reg <- data.frame()
@@ -27,7 +28,7 @@ reg <- reg %>%
   #删除重复项
   distinct() %>%
   #删除用不到的列
-  select(-Numbers,-qr_Hbbz, -qr_fzxb, -DATE1, -DATE2,
+  select(-qr_Hbbz, -qr_fzxb, -DATE1, -DATE2,
          -Tag, -Branch, -Species.x, -Opterator,
          -Length, -ProjArea, -SurfArea, -`根系扫描日期`,
          -No_Dat, -`菌根侵染编号`, -`称重日期`, -`错写为`,
@@ -130,20 +131,20 @@ library(tidyverse)
 
 
 # 选择数值型变量列
-numeric_vars <- reg_AM_50[, c("qr_AM","qr_BZ", "qr_Pn", "qr_Pq",
+numeric_vars <- reg_AM_20[, c("qr_AM","qr_BZ", "qr_Pn", "qr_Pq",
                               #"qr_EM",
-                              "GX", "GY", "DBH1", "DBH2",
+                              "GX", "GY","DBH1", "DBH2",
                               "AD", "SRL", "SRA",
                               "soc", "tn", "tp", "ap", "ph",
-                              "pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh",
-                              #"pd20_unweigh", "mpd20_unweigh", "mpd20_weigh", "mntd20_unweigh", "mntd20_weigh",
+                              #"pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh",
+                              "pd20_unweigh", "mpd20_unweigh", "mpd20_weigh", "mntd20_unweigh", "mntd20_weigh",
                               #"pd10_unweigh", "mpd10_unweigh", "mpd10_weigh", "mntd10_unweigh", "mntd10_weigh",
-                              #"shannon_div_20", "invsimpson_div_20", "simpson_div_20",
+                              "shannon_div_20", "invsimpson_div_20", "simpson_div_20",
                               #"shannon_div_10", "invsimpson_div_10", "simpson_div_10",
-                              "shannon_div_50", "invsimpson_div_50", "simpson_div_50",
-                              #"BD_20", "CBD_20", "HBD_20",
+                              #"shannon_div_50", "invsimpson_div_50", "simpson_div_50",
+                              "BD_20", "CBD_20", "HBD_20",
                               #"BD_10", "CBD_10", "HBD_10",
-                              "BD_50", "CBD_50", "HBD_50",
+                              #"BD_50", "CBD_50", "HBD_50",
                               "growth_rate")]
 library(ggplot2)
 library(reshape2)
@@ -226,9 +227,14 @@ numeric_vars$qr_AM <- ifelse(numeric_vars$qr_AM <= 0, 0.01, ifelse(numeric_vars$
 numeric_vars$qr_EM <- ifelse(numeric_vars$qr_EM >= 1, 0.99, numeric_vars$qr_EM)
 
 library(betareg)
-#AM_10
+#AM_20
+reg$qr_AM <- ifelse(reg$qr_AM <= 0, 0.01, ifelse(reg$qr_AM >= 1, 0.99, reg$qr_AM))
 beita_model_forest <- betareg(qr_AM ~
-                                AD + mpd50_weigh + tp + SRA + GY + DBH2 + CBD_50 + DBH1 + ap + soc, data = numeric_vars, link = "logit")
+                                 mntd20_unweigh * mntd20_weigh * pd20_unweigh + ap * tp * soc * tn + SRL * SRA * AD + CBD_20, data = reg_AM_20, link = "logit")
+summary(beita_model_forest)
+library(glmmTMB)
+glm_20 <- glmmTMB(qr_AM ~ mntd20_unweigh * mntd20_weigh * pd20_unweigh + ap * tp * soc * tn + SRL * SRA * AD + CBD_20 + (1|Order), reg, family=beta_family)
+glm_20 <- glmmTMB(qr_AM ~ mntd20_unweigh + mntd20_weigh + pd20_unweigh + ap + tp + soc + tn + SRL + SRA + AD + CBD_20 + (1|Order), reg, family=beta_family)
 #EM_10
 beita_model_forest <- betareg(qr_EM ~
                          soc + mpd10_unweigh + tn + pd10_unweigh + DBH1 + shannon_div_10 + invsimpson_div_10 + GX, data = numeric_vars, link = "logit")
@@ -256,7 +262,7 @@ reg_AM_10$qr_AM <- ifelse(reg_AM_10$qr_AM <= 0, 0.01, ifelse(reg_AM_10$qr_AM >= 
 reg_AM_10$Order <- as.factor(reg_AM_10$Order)
 model <- betareg(qr_AM ~ AD + SRL + soc + tp + ap + ph + pd10_unweigh + mpd10_unweigh + mpd10_weigh + mntd10_unweigh + mntd10_weigh + shannon_div_10 + BD_10 + CBD_10 ,
                  data = reg_AM_10)
-glmer(qr_AM ~ AD + SRL + soc+ tp + ap + ph + pd10_unweigh +mpd10_unweigh + mpd10_weigh + mntd10_unweigh + mntd10_weigh + shannon_div_10 + BD_10 + CBD_10 + Order , data = reg_AM_10, family = betabinomial(link = "logit"))
+glmer(qr_AM ~ AD + SRL + soc+ tp + ap + ph + pd10_unweigh + mpd10_unweigh + mpd10_weigh + mntd10_unweigh + mntd10_weigh + shannon_div_10 + BD_10 + CBD_10 + Order , data = reg_AM_10, family = betabinomial(link = "logit"))
 
 # 假设 "Order" 是一个因子型变量
 reg_AM_10$Order <- factor(reg_AM_10$Order)

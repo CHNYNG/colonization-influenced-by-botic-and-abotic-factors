@@ -167,5 +167,6 @@ hsd_neighbor <- hsd_neighbor %>%
          BD_10 =BD_10,
          CBD_10=CBD_10,
          HBD_10=HBD_10)
+
 rm(BD_20,CBD_20,HBD_20,BD_50,CBD_50,HBD_50,BD_10,CBD_10,HBD_10,
    hsd_sub,hsd_sub_con,hsd_sub_het)
