@@ -20,11 +20,12 @@ reg <- root_qrl %>%
             by = "TagNew", suffix = c("", "_sp_loc"), relationship = "many-to-many") %>%
   left_join(hsd_neighbor, 
             by = "TagNew", suffix = c("", "_hsd_neighbor"), relationship = "many-to-many")
+reg <- cbind(reg,pd_ind_all)
 #整理一下reg
 
 reg <- reg %>%
   #筛一下reg，留下Branch==0的数值
-  filter(Branch == 0) %>%
+ # filter(Branch == 0) %>%
   #删除重复项
   distinct() %>%
   #删除用不到的列
@@ -36,23 +37,103 @@ reg <- reg %>%
 #重命名一下数据框
   rename(AD = AvgDiam)%>%
 #把概率NA的列转为0
-  mutate(qr_AM = coalesce(qr_AM, 0),
+  mutate(#qr_AM = coalesce(qr_AM, 0),
          GX = as.numeric(as.character(GX)),
-         qr_AM = coalesce(qr_AM, 0),
-         qr_EM = coalesce(qr_EM, 0),
-         qr_BZ = coalesce(qr_BZ, 0),
-         qr_Pn = coalesce(qr_Pn, 0),
-         qr_Pq = coalesce(qr_Pq, 0),
-         SRL = coalesce(SRL, 0),
-         AD = coalesce(AD, 0),
-         SRA = coalesce(SRA, 0),
-         DBH1 =coalesce(DBH1, 0))#%>%
+         #qr_AM = coalesce(qr_AM, 0),
+         #qr_EM = coalesce(qr_EM, 0),
+         #qr_BZ = coalesce(qr_BZ, 0),
+         #qr_Pn = coalesce(qr_Pn, 0),
+         #qr_Pq = coalesce(qr_Pq, 0),
+         #SRL = coalesce(SRL, 0),
+         #AD = coalesce(AD, 0),
+         #SRA = coalesce(SRA, 0),
+         #DBH1 =coalesce(DBH1, 0)
+         )#%>%
   #删除H和DBH1为NA的行
   #filter(!is.na(H))
 #加一列growth_rate
+#删除可能有tag错误的行（这样的行qr_AM、EM和AD、SRL、SRA都为0，应该有10行左右
+#reg <- reg[!(reg$qr_AM == 0 & reg$qr_EM == 0 & reg$AD == 0 & reg$SRL == 0 & reg$SRA == 0), ]
+
+#reg <- reg %>%
+#  mutate(growth_rate = log(DBH2)/log(DBH1),
+#         growth_rate = ifelse(is.infinite(growth_rate) | is.nan(growth_rate), 0, growth_rate))
+
+pca_data <- reg[, c("soc","tn","tp","ap","ph")]
+pca_result <- prcomp(pca_data, scale = TRUE)
+pca_result <- pca_result$x
+pca_results <- data.frame(PC1 = pca_result[, 1], PC2 = pca_result[, 2], reg[,c("qr_AM","M_Type")])
+
 reg <- reg %>%
-  mutate(growth_rate = log(DBH2)/log(DBH1),
-         growth_rate = ifelse(is.infinite(growth_rate) | is.nan(growth_rate), 0, growth_rate))
+  mutate(soil_pc1 = pca_results[,"PC1"],
+         soil_pc2 = pca_results[,"PC2"])
+
+reg <- reg[order(reg$Latin,reg$DBH2),]
+
+reg <- reg %>%
+  group_by(Latin) %>%
+  mutate(DBH_order = row_number(),
+         DBH_order = as.character(DBH_order))
+reg <- reg %>%
+  ungroup()
+
+scale_to_01 <- function(x) {
+  # 使用na.rm参数忽略NA值
+  scaled_data <- (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+  return(scaled_data)
+}
+
+
+scaled_data <- reg %>%
+  select(qr_AM,qr_BZ, qr_Pn, qr_Pq,qr_EM,
+         GX, GY,DBH1, DBH2,AD, SRL, SRA,soc, tn, tp, ap, ph,
+         pd50_unweigh, mpd50_unweigh, mpd50_weigh, mntd50_unweigh, mntd50_weigh,
+         pd20_unweigh, mpd20_unweigh, mpd20_weigh, mntd20_unweigh, mntd20_weigh,
+         pd10_unweigh, mpd10_unweigh, mpd10_weigh, mntd10_unweigh, mntd10_weigh,
+         totpd_20, avepd_20, minpd_20, apd_20, ntpd_20, 
+         totpd_10, avepd_10, minpd_10, apd_10, ntpd_10, 
+         totpd_50, avepd_50, minpd_50, apd_50, ntpd_50, 
+         shannon_div_20, invsimpson_div_20, simpson_div_20,
+         shannon_div_10, invsimpson_div_10, simpson_div_10,
+         shannon_div_50, invsimpson_div_50, simpson_div_50,
+         BD_20, CBD_20, HBD_20,
+         BD_10, CBD_10, HBD_10,
+         BD_50, CBD_50, HBD_50) %>%
+  scale_to_01()
+
+reg_sc <- reg %>%
+  select( -qr_AM, -qr_BZ, -qr_Pn, -qr_Pq, -qr_EM,
+            -GX, -GY, -DBH1, -DBH2, -AD, -SRL, -SRA, -soc, -tn, -tp, -ap, -ph,
+            -pd50_unweigh, -mpd50_unweigh, -mpd50_weigh, -mntd50_unweigh, -mntd50_weigh,
+            -pd20_unweigh, -mpd20_unweigh, -mpd20_weigh, -mntd20_unweigh, -mntd20_weigh,
+            -pd10_unweigh, -mpd10_unweigh, -mpd10_weigh, -mntd10_unweigh, -mntd10_weigh,
+            -totpd_20, -avepd_20, -minpd_20, -apd_20, -ntpd_20,
+              -totpd_10, -avepd_10, -minpd_10, -apd_10, -ntpd_10,
+            -totpd_50, -avepd_50, -minpd_50, -apd_50, -ntpd_50,
+            -shannon_div_20, -invsimpson_div_20, -simpson_div_20,
+            -shannon_div_10, -invsimpson_div_10, -simpson_div_10,
+            -shannon_div_50, -invsimpson_div_50, -simpson_div_50,
+            -BD_20, -CBD_20, -HBD_20,
+            -BD_10, -CBD_10, -HBD_10,
+            -BD_50, -CBD_50, -HBD_50)%>%
+  bind_cols(scaled_data)
+
+reg_sc <- reg %>%
+  mutate(scale(reg[,c("qr_AM","qr_BZ", "qr_Pn", "qr_Pq","qr_EM",
+                      "GX", "GY","DBH1", "DBH2","AD", "SRL", "SRA","soc", "tn", "tp", "ap", "ph",
+                      "pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh",
+                      "pd20_unweigh", "mpd20_unweigh", "mpd20_weigh", "mntd20_unweigh", "mntd20_weigh",
+                      "pd10_unweigh", "mpd10_unweigh", "mpd10_weigh", "mntd10_unweigh", "mntd10_weigh",
+                      "totpd_20", "avepd_20", "minpd_20", "apd_20", "ntpd_20", 
+                      "totpd_10", "avepd_10", "minpd_10", "apd_10", "ntpd_10", 
+                      "totpd_50", "avepd_50", "minpd_50", "apd_50", "ntpd_50", 
+                      "shannon_div_20", "invsimpson_div_20", "simpson_div_20",
+                      "shannon_div_10", "invsimpson_div_10", "simpson_div_10",
+                      "shannon_div_50", "invsimpson_div_50", "simpson_div_50",
+                      "BD_20", "CBD_20", "HBD_20",
+                      "BD_10", "CBD_10", "HBD_10",
+                      "BD_50", "CBD_50", "HBD_50")]))%>%
+  select()
 
 ###
 #把10/20/50分开数据集,把AM=0和EM=0分别数据集，也就是有
@@ -131,21 +212,29 @@ library(tidyverse)
 
 
 # 选择数值型变量列
-numeric_vars <- reg_AM_20[, c("qr_AM","qr_BZ", "qr_Pn", "qr_Pq",
+numeric_vars <- reg_sc[, c("qr_AM",
+                           #"qr_BZ", "qr_Pn", "qr_Pq",
                               #"qr_EM",
                               "GX", "GY","DBH1", "DBH2",
                               "AD", "SRL", "SRA",
-                              "soc", "tn", "tp", "ap", "ph",
+                              "soc", "tn", "tp", "ap", "ph","soil_pc1","soil_pc2",
                               #"pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh",
                               "pd20_unweigh", "mpd20_unweigh", "mpd20_weigh", "mntd20_unweigh", "mntd20_weigh",
                               #"pd10_unweigh", "mpd10_unweigh", "mpd10_weigh", "mntd10_unweigh", "mntd10_weigh",
+                              "totpd_20", "avepd_20", "minpd_20", "apd_20", "ntpd_20", 
+                              #"totpd_10", "avepd_10", "minpd_10", "apd_10", "ntpd_10", 
+                              #"totpd_50", "avepd_50", "minpd_50", "apd_50", "ntpd_50", 
                               "shannon_div_20", "invsimpson_div_20", "simpson_div_20",
                               #"shannon_div_10", "invsimpson_div_10", "simpson_div_10",
                               #"shannon_div_50", "invsimpson_div_50", "simpson_div_50",
-                              "BD_20", "CBD_20", "HBD_20",
+                              "BD_20", "CBD_20", "HBD_20"
                               #"BD_10", "CBD_10", "HBD_10",
                               #"BD_50", "CBD_50", "HBD_50",
-                              "growth_rate")]
+                               )]
+
+numeric_vars <- na.omit(numeric_vars)
+
+
 library(ggplot2)
 library(reshape2)
 
@@ -230,11 +319,20 @@ library(betareg)
 #AM_20
 reg$qr_AM <- ifelse(reg$qr_AM <= 0, 0.01, ifelse(reg$qr_AM >= 1, 0.99, reg$qr_AM))
 beita_model_forest <- betareg(qr_AM ~
-                                 mntd20_unweigh * mntd20_weigh * pd20_unweigh + ap * tp * soc * tn + SRL * SRA * AD + CBD_20, data = reg_AM_20, link = "logit")
+                                 mntd20_unweigh * mntd20_weigh * pd20_unweigh + ap * tp * soc * tn + SRL * SRA * AD + CBD_20, data = reg, link = "logit")
 summary(beita_model_forest)
 library(glmmTMB)
-glm_20 <- glmmTMB(qr_AM ~ mntd20_unweigh * mntd20_weigh * pd20_unweigh + ap * tp * soc * tn + SRL * SRA * AD + CBD_20 + (1|Order), reg, family=beta_family)
-glm_20 <- glmmTMB(qr_AM ~ mntd20_unweigh + mntd20_weigh + pd20_unweigh + ap + tp + soc + tn + SRL + SRA + AD + CBD_20 + (1|Order), reg, family=beta_family)
+glm_20 <- glmmTMB(qr_AM ~ mntd20_unweigh * mntd20_weigh * pd20_unweigh + ap * tp * soc * tn + SRL * SRA * AD + CBD_20 + (1|Order), reg_sc, family=beta_family)
+glm_20 <- glmmTMB(qr_AM ~  apd_20+ ap + tp + soc + tn + SRL + SRA + AD + CBD_20 + (1|Order), reg_sc, family=beta_family)
+glm_20b <- update(glm_20, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+all.equal(fixef(glm_20), fixef(glm_20b))
+###例子
+m1 <- glmmTMB(count~ mined, family=poisson, data=Salamanders)
+m1B <- update(m1, control=glmmTMBControl(optimizer=optim,
+                                         optArgs=list(method="BFGS")))
+## estimates are *nearly* identical:
+all.equal(fixef(m1), fixef(m1B))
+
 #EM_10
 beita_model_forest <- betareg(qr_EM ~
                          soc + mpd10_unweigh + tn + pd10_unweigh + DBH1 + shannon_div_10 + invsimpson_div_10 + GX, data = numeric_vars, link = "logit")
@@ -279,3 +377,11 @@ model <- betareg(qr_AM ~ AD * SRL * soc * tp * ap * ph * pd10_unweigh * mpd10_un
 
 # 查看模型摘要
 summary(model)
+
+####看一下自相关的距离
+data <- reg 
+coordinates(data) <- c("GX", "GY")
+spatial_weights <- dnearneigh(data, d1 = 0, d2 = 50)
+weights <- nb2listw(spatial_weights, style = "W", zero.policy = TRUE)
+moran_result <- moran.test(data$soil_pc1, weights)
+print(moran_result)

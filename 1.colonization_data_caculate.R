@@ -5,12 +5,11 @@
 ###根系信息（包含根系表面积、平均根直径、比根长
 
 ###### input the data
-Qrl <- read.csv("data/菌根侵染率_观察记录_整合.csv",header = T,fileEncoding = "GBK")
+Qrl <- read.csv("data/菌根侵染率_整合.csv",header = T,fileEncoding = "GBK")
 N_data <- read.csv("data/N整理.csv",header = T,fileEncoding = "GBK",stringsAsFactors = FALSE)
 S_data <- read.csv("data/S整理.csv",header = T,fileEncoding = "GBK",stringsAsFactors = FALSE)
 weigh <- read.csv("data/weigh.csv",header = T,fileEncoding = "GBK")
 Nor_data <- read.csv("data/整理.csv",header = T,fileEncoding = "GBK",stringsAsFactors = FALSE)
-Qrl <- read.csv("data/菌根侵染率_观察记录_整合.csv",header = T,fileEncoding = "GBK")
 HSD_data <- read.csv("data/HSD.csv",header = T,fileEncoding = "GBK")
 
 
@@ -187,7 +186,7 @@ root_qrl <- root_qrl %>%
   filter(Branch ==0) %>%
   select(-Numbers) %>%
   distinct(TagNew, .keep_all = TRUE) %>%
-  gsub(" ", "_", root_qrl$Latin)
+  mutate(Latin = gsub(" ", "_", Latin))
 
 
 #给物种信息合并菌根类型
