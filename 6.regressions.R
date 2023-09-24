@@ -85,7 +85,7 @@ scale_to_01 <- function(x) {
 
 
 scaled_data <- reg %>%
-  select(qr_AM,qr_BZ, qr_Pn, qr_Pq,qr_EM,
+  select(qr_AM,qr_BZ, qr_Pn, qr_Pq,qr_EM,am,em,
          GX, GY,DBH1, DBH2,AD, SRL, SRA,soc, tn, tp, ap, ph,
          pd50_unweigh, mpd50_unweigh, mpd50_weigh, mntd50_unweigh, mntd50_weigh,
          pd20_unweigh, mpd20_unweigh, mpd20_weigh, mntd20_unweigh, mntd20_weigh,
@@ -102,7 +102,7 @@ scaled_data <- reg %>%
   scale_to_01()
 
 reg_sc <- reg %>%
-  select( -qr_AM, -qr_BZ, -qr_Pn, -qr_Pq, -qr_EM,
+  select( -qr_AM, -qr_BZ, -qr_Pn, -qr_Pq, -qr_EM,-am,-em,
             -GX, -GY, -DBH1, -DBH2, -AD, -SRL, -SRA, -soc, -tn, -tp, -ap, -ph,
             -pd50_unweigh, -mpd50_unweigh, -mpd50_weigh, -mntd50_unweigh, -mntd50_weigh,
             -pd20_unweigh, -mpd20_unweigh, -mpd20_weigh, -mntd20_unweigh, -mntd20_weigh,
@@ -119,7 +119,7 @@ reg_sc <- reg %>%
   bind_cols(scaled_data)
 
 reg_sc <- reg %>%
-  mutate(scale(reg[,c("qr_AM","qr_BZ", "qr_Pn", "qr_Pq","qr_EM",
+  mutate(scale(reg[,c("qr_AM","qr_BZ", "qr_Pn", "qr_Pq","qr_EM","am","em",
                       "GX", "GY","DBH1", "DBH2","AD", "SRL", "SRA","soc", "tn", "tp", "ap", "ph",
                       "pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh",
                       "pd20_unweigh", "mpd20_unweigh", "mpd20_weigh", "mntd20_unweigh", "mntd20_weigh",
@@ -215,7 +215,7 @@ library(tidyverse)
 numeric_vars <- reg_sc[, c("qr_AM",
                            #"qr_BZ", "qr_Pn", "qr_Pq",
                               #"qr_EM",
-                              "GX", "GY","DBH1", "DBH2",
+                              #"GX", "GY","DBH1", "DBH2",
                               "AD", "SRL", "SRA",
                               "soc", "tn", "tp", "ap", "ph","soil_pc1","soil_pc2",
                               #"pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh",
@@ -265,6 +265,7 @@ print(p)
 ggsave("pic/correlation_plot_EM_10.pdf", p, width = 24, height = 12)
 
 library(randomForest)
+library(tibble)
 ####使用随机森林选择变量
 # 使用你的数据集和目标变量
 set.seed(0725)
@@ -323,7 +324,7 @@ beita_model_forest <- betareg(qr_AM ~
 summary(beita_model_forest)
 library(glmmTMB)
 glm_20 <- glmmTMB(qr_AM ~ mntd20_unweigh * mntd20_weigh * pd20_unweigh + ap * tp * soc * tn + SRL * SRA * AD + CBD_20 + (1|Order), reg_sc, family=beta_family)
-glm_20 <- glmmTMB(qr_AM ~  apd_20+ ap + tp + soc + tn + SRL + SRA + AD + CBD_20 + (1|Order), reg_sc, family=beta_family)
+glm_20 <- glmmTMB(am ~  apd_20+ ap + tp + soc + tn + SRL + SRA + AD + CBD_20 + (1|Order), reg_sc, family=beta_family)
 glm_20b <- update(glm_20, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 all.equal(fixef(glm_20), fixef(glm_20b))
 ###例子

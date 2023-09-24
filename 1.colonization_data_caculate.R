@@ -55,6 +55,24 @@ root_morphology <- root_morphology %>%
   mutate(SRL = as.numeric(Length) / as.numeric(Weight.g),
          SRA = as.numeric(SurfArea) / as.numeric(Weight.g))
 
+
+Qrl <- Qrl %>%
+  mutate(AM_range = 菌丝出现视野数 / 观察视野总数,
+         EM_range = ECM / 观察视野总数,
+         am = case_when(
+           AM_range <= 0.25 ~ 0.125,
+           AM_range > 0.25 & AM_range <= 0.5 ~ 0.375,
+           AM_range > 0.5 & AM_range <= 0.75 ~ 0.625,
+           AM_range > 0.75 ~ 0.875
+         ),
+         em = case_when(
+           EM_range <= 0.25 ~ 0.125,
+           EM_range > 0.25 & EM_range <= 0.5 ~ 0.375,
+           EM_range > 0.5 & EM_range <= 0.75 ~ 0.625,
+           EM_range > 0.75 ~ 0.875
+         ))
+
+
 ###calculate the colonization
 Qrl_ca <- Qrl %>%
   group_by(Numbers) %>%
@@ -66,7 +84,9 @@ Qrl_ca <- Qrl %>%
     Hbbz = sum(厚壁孢子),
     Pn = sum(泡囊),
     Pq = sum(盘曲结构),
-    Fzxb = sum(辅助细胞群数)
+    Fzxb = sum(辅助细胞群数),
+    am = mean(am),
+    em = mean(em)
   ) %>%
   mutate(
     qr_AM = jssys / gcsys,
@@ -77,7 +97,7 @@ Qrl_ca <- Qrl %>%
     qr_Pq = Pq / gcsys,
     qr_fzxb = Fzxb / gcsys
   ) %>%
-  select(qr_AM, qr_EM, qr_BZ, qr_Hbbz, qr_Pn, qr_Pq, qr_fzxb, Numbers)
+  select(qr_AM, qr_EM, qr_BZ, qr_Hbbz, qr_Pn, qr_Pq, qr_fzxb, Numbers,am, em)
 
 
 #####merge the colonization data to TagNew
