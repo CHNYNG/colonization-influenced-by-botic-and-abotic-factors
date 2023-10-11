@@ -249,3 +249,42 @@ rm(ap_g,ap_prd_dat,ap_variog,ph_g,ph_prd_dat,ph_variog,
    soc_g,soc_prd_dat,soc_variog,tn_g,tn_prd_dat,tn_variog,
    tp_g,tp_prd_dat,tp_variog,ap_g_maxdis,gx_column,gy_column,
    ph_g_maxdis,soc_g_maxdis,tn_g_maxdis,tp_g_maxdis)
+
+#####
+#插值文启的一些数据
+#####
+
+soil_wq <- read.csv("data/HSD+env5m.csv", header = T, fileEncoding = "GBK")
+soil_wq <- soil_wq %>%
+  select(gx, gy, Aspect5m, Slope5m, elev, moisture) %>%
+  rename(
+    aspect = Aspect5m,
+    slope = Slope5m
+  )%>%
+  mutate(
+    aspect = cos(aspect)
+  )
+
+gx_column <- as.numeric(which(names(soil_wq) == "gx"))
+gy_column <- as.numeric(which(names(soil_wq) == "gy"))
+
+#创建geodata
+aspect_g <- as.geodata(soil_wq, 
+                    coords.col = gx_column:gy_column,  
+                    data.col = as.numeric(which(names(soil_wq) == "aspect")))
+
+#plot(aspect_g)
+#plot(aspect_g, trend = "1st")
+#plot(aspect_g, trend = "2nd") # it seems that we should consider 2nd trend
+
+#师兄说，这一行不用知道为啥，做就行
+aspect_g_maxdis <- summary(aspect_g)$distances.summary[2] / 2 # we usually do this
+
+#这里的trend要选择一个上面认为表现最好的
+aspect_variog <- variog(
+  aspect_g,
+  trend = "2nd",
+  max.dist = aspect_g_maxdis
+)
+
+aspect_prd_dat <- auto_kriging(aspect_variog, aspect_g)

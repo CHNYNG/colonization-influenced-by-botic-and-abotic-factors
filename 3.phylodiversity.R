@@ -77,6 +77,11 @@ hsd_alive_singlebr <- hsd_alive_singlebr %>%
   filter(floor(TagNew) == TagNew)
 
 hsd_alive_singlebr$TagNew <- as.character(hsd_alive_singlebr$TagNew)
+
+library(stringr)
+hsd_alive_singlebr <- hsd_alive_singlebr %>%
+  mutate(TagNew = str_pad(TagNew, width = 7, side = "left", pad = "0"))
+
 ##一个看不懂的循环
 # loops ----
 pd50_unweigh <- c();

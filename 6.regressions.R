@@ -83,10 +83,9 @@ scale_to_01 <- function(x) {
   return(scaled_data)
 }
 
-
 scaled_data <- reg %>%
-  select(qr_AM,qr_BZ, qr_Pn, qr_Pq,qr_EM,am,em,
-         GX, GY,DBH1, DBH2,AD, SRL, SRA,soc, tn, tp, ap, ph,
+  select(qr_AM, qr_BZ, qr_Pn, qr_Pq,qr_EM, am, em,
+         GX, GY,DBH1, DBH2,AD, SRL, SRA,soc, tn, tp, ap, ph, REi, RDi, RRi,
          pd50_unweigh, mpd50_unweigh, mpd50_weigh, mntd50_unweigh, mntd50_weigh,
          pd20_unweigh, mpd20_unweigh, mpd20_weigh, mntd20_unweigh, mntd20_weigh,
          pd10_unweigh, mpd10_unweigh, mpd10_weigh, mntd10_unweigh, mntd10_weigh,
@@ -103,7 +102,7 @@ scaled_data <- reg %>%
 
 reg_sc <- reg %>%
   select( -qr_AM, -qr_BZ, -qr_Pn, -qr_Pq, -qr_EM,-am,-em,
-            -GX, -GY, -DBH1, -DBH2, -AD, -SRL, -SRA, -soc, -tn, -tp, -ap, -ph,
+            -GX, -GY, -DBH1, -DBH2, -AD, -SRL, -SRA, -soc, -tn, -tp, -ap, -ph, -REi, -RDi, -RRi,
             -pd50_unweigh, -mpd50_unweigh, -mpd50_weigh, -mntd50_unweigh, -mntd50_weigh,
             -pd20_unweigh, -mpd20_unweigh, -mpd20_weigh, -mntd20_unweigh, -mntd20_weigh,
             -pd10_unweigh, -mpd10_unweigh, -mpd10_weigh, -mntd10_unweigh, -mntd10_weigh,
@@ -117,23 +116,7 @@ reg_sc <- reg %>%
             -BD_10, -CBD_10, -HBD_10,
             -BD_50, -CBD_50, -HBD_50)%>%
   bind_cols(scaled_data)
-
-reg_sc <- reg %>%
-  mutate(scale(reg[,c("qr_AM","qr_BZ", "qr_Pn", "qr_Pq","qr_EM","am","em",
-                      "GX", "GY","DBH1", "DBH2","AD", "SRL", "SRA","soc", "tn", "tp", "ap", "ph",
-                      "pd50_unweigh", "mpd50_unweigh", "mpd50_weigh", "mntd50_unweigh", "mntd50_weigh",
-                      "pd20_unweigh", "mpd20_unweigh", "mpd20_weigh", "mntd20_unweigh", "mntd20_weigh",
-                      "pd10_unweigh", "mpd10_unweigh", "mpd10_weigh", "mntd10_unweigh", "mntd10_weigh",
-                      "totpd_20", "avepd_20", "minpd_20", "apd_20", "ntpd_20", 
-                      "totpd_10", "avepd_10", "minpd_10", "apd_10", "ntpd_10", 
-                      "totpd_50", "avepd_50", "minpd_50", "apd_50", "ntpd_50", 
-                      "shannon_div_20", "invsimpson_div_20", "simpson_div_20",
-                      "shannon_div_10", "invsimpson_div_10", "simpson_div_10",
-                      "shannon_div_50", "invsimpson_div_50", "simpson_div_50",
-                      "BD_20", "CBD_20", "HBD_20",
-                      "BD_10", "CBD_10", "HBD_10",
-                      "BD_50", "CBD_50", "HBD_50")]))%>%
-  select()
+rm(scaled_data)
 
 ###
 #把10/20/50分开数据集,把AM=0和EM=0分别数据集，也就是有
