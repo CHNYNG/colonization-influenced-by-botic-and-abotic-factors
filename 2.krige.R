@@ -254,37 +254,39 @@ rm(ap_g,ap_prd_dat,ap_variog,ph_g,ph_prd_dat,ph_variog,
 #插值文启的一些数据
 #####
 
-soil_wq <- read.csv("data/HSD+env5m.csv", header = T, fileEncoding = "GBK")
+soil_wq <- read.csv("data/soil_origin.csv", header = T, fileEncoding = "GBK")
 soil_wq <- soil_wq %>%
-  select(gx, gy, Aspect5m, Slope5m, elev, moisture) %>%
+  select(gx, gy, MWC) %>%
   rename(
-    aspect = Aspect5m,
-    slope = Slope5m
-  )%>%
-  mutate(
-    aspect = cos(aspect)
+    moisture = MWC
   )
 
 gx_column <- as.numeric(which(names(soil_wq) == "gx"))
 gy_column <- as.numeric(which(names(soil_wq) == "gy"))
 
 #创建geodata
-aspect_g <- as.geodata(soil_wq, 
+moisture_g <- as.geodata(soil_wq, 
                     coords.col = gx_column:gy_column,  
-                    data.col = as.numeric(which(names(soil_wq) == "aspect")))
+                    data.col = as.numeric(which(names(soil_wq) == "moisture")))
 
-#plot(aspect_g)
-#plot(aspect_g, trend = "1st")
-#plot(aspect_g, trend = "2nd") # it seems that we should consider 2nd trend
+#plot(moisture_g)
+#plot(moisture_g, trend = "1st")
+#plot(moisture_g, trend = "2nd")
+# it seems that we should consider none trend
 
 #师兄说，这一行不用知道为啥，做就行
-aspect_g_maxdis <- summary(aspect_g)$distances.summary[2] / 2 # we usually do this
+moisture_g_maxdis <- summary(moisture_g)$distances.summary[2] / 2 # we usually do this
 
 #这里的trend要选择一个上面认为表现最好的
-aspect_variog <- variog(
-  aspect_g,
-  trend = "2nd",
-  max.dist = aspect_g_maxdis
+moisture_variog <- variog(
+  moisture_g,
+#  trend = "2nd",
+  max.dist = moisture_g_maxdis
 )
 
-aspect_prd_dat <- auto_kriging(aspect_variog, aspect_g)
+moisture_prd_dat <- auto_kriging(moisture_variog, moisture_g)
+
+soil_pred <- soil_pred %>%
+  mutate(moisture = moisture_prd_dat$prediction)
+
+rm(moisture_prd_dat, moisture_g, moisture_g_maxdis, moisture_variog)
