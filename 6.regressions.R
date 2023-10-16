@@ -96,3 +96,8 @@ spatial_weights <- dnearneigh(data, d1 = 0, d2 = 50)
 weights <- nb2listw(spatial_weights, style = "W", zero.policy = TRUE)
 moran_result <- moran.test(data$soil_pc1, weights)
 print(moran_result)
+
+###整理每个
+
+glm_20 <- glmmTMB(am ~  mntd20_unweigh + sptype2/resource, reg_sc, family=beta_family)
+glm_20b <- update(glm_20, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))

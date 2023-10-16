@@ -62,8 +62,7 @@ ggplot(reg_am, aes(x = mntd20_unweigh, y = am, color = resource)) +
   theme(text = element_text(size = 24))
 
 reg_sc$sptype2 <- factor(reg_sc$sptype2, levels = c("dominant", "common", "rare"))
-glm_20 <- glmmTMB(am ~  mntd20_unweigh + sptype2/resource, reg_sc, family=beta_family)
-glm_20b <- update(glm_20, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+
 summary(glm_20b)
 ggplot(reg_am, aes(x = tn, y = am, color = resource)) +
   geom_point() +

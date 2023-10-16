@@ -60,7 +60,7 @@ pca_data <- reg[, c("soc","tn","tp","ap","ph", "moisture")]
 pca_result <- prcomp(pca_data, scale = TRUE)
 pca_result <- pca_result$x
 pca_results <- data.frame(PC1 = pca_result[, 1], PC2 = pca_result[, 2], reg[,c("qr_AM","M_Type")])
-
+summary(pca_result)
 reg <- reg %>%
   mutate(soil_pc1 = pca_results[,"PC1"],
          soil_pc2 = pca_results[,"PC2"])
@@ -176,8 +176,11 @@ scale_to_01 <- function(x) {
 }
 
 scaled_data <- reg %>%
-  select(qr_AM, qr_BZ, qr_Pn, qr_Pq,qr_EM, am, em,
-         GX, GY,DBH1, DBH2,AD, SRL, SRA,soc, tn, tp, ap, ph, REi, RDi, RRi,
+  select(qr_AM, qr_BZ, qr_Pn, qr_Pq,qr_EM, am, em, 
+         GX, GY,DBH1, DBH2, rel_dbh_multi, AD, SRL, SRA,
+         soc, tn, tp, ap, ph, moisture,
+         elevation, aspect, slope, convexity,
+         REi, RDi, RRi,
          pd50_unweigh, mpd50_unweigh, mpd50_weigh, mntd50_unweigh, mntd50_weigh,
          pd20_unweigh, mpd20_unweigh, mpd20_weigh, mntd20_unweigh, mntd20_weigh,
          pd10_unweigh, mpd10_unweigh, mpd10_weigh, mntd10_unweigh, mntd10_weigh,
@@ -194,7 +197,10 @@ scaled_data <- reg %>%
 
 reg_sc <- reg %>%
   select( -qr_AM, -qr_BZ, -qr_Pn, -qr_Pq, -qr_EM, -am, -em,
-          -GX, -GY, -DBH1, -DBH2, -AD, -SRL, -SRA, -soc, -tn, -tp, -ap, -ph, -REi, -RDi, -RRi,
+          -GX, -GY, -DBH1, -DBH2, -rel_dbh_multi, -AD, -SRL, -SRA,
+          -soc, -tn, -tp, -ap, -ph, -moisture, 
+          -elevation, -aspect, -slope, -convexity,
+          -REi, -RDi, -RRi,
           -pd50_unweigh, -mpd50_unweigh, -mpd50_weigh, -mntd50_unweigh, -mntd50_weigh,
           -pd20_unweigh, -mpd20_unweigh, -mpd20_weigh, -mntd20_unweigh, -mntd20_weigh,
           -pd10_unweigh, -mpd10_unweigh, -mpd10_weigh, -mntd10_unweigh, -mntd10_weigh,
@@ -216,6 +222,7 @@ save(reg, file = "data/data_for_reg.RData")
 #选择回归用的变量
 #####
 
+#20
 # 选择数值型变量列
 numeric_vars <- reg_sc %>%
   select(#qr_AM,
@@ -223,9 +230,10 @@ numeric_vars <- reg_sc %>%
   #qr_BZ, qr_Pn, qr_Pq,
   #qr_EM,
   #GX, GY,DBH1,
-  DBH2,RDi,
+  DBH2, rel_dbh_multi, RDi,
   AD, SRL, SRA,
-  #soc, tn, tp, ap, ph, moisture, 
+  soc, tn, tp, ap, ph, moisture, 
+  elevation, aspect, slope, convexity,
   soil_pc1, soil_pc2,
   #pd50_unweigh, mpd50_unweigh, mpd50_weigh, mntd50_unweigh, mntd50_weigh,
   pd20_unweigh, mpd20_unweigh, mpd20_weigh, mntd20_unweigh, mntd20_weigh,
@@ -257,21 +265,21 @@ cor_data <- melt(cor_matrix)
 # 创建相关性图
 p <- ggplot(cor_data, aes(Var1, Var2, fill = value)) +
   geom_tile() +
-  scale_fill_gradient2(low = "#cbc9e2", mid = "#f7fcb9", high = "#225ea8", midpoint = 0) +
+  scale_fill_gradient2(low = "#cbc9e2", mid = "#f7fcb9", high = "#cbc9e2", midpoint = 0) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title = "Correlation Plot (am_20)") +
   # 添加相关系数标签
   # geom_text(aes(label = round(value, 2)), vjust = 1, size = 3, color = "black")+
   
-  geom_text(aes(label = ifelse(cor_data$value > 0.9 & cor_data$value < 1, paste0(round(cor_data$value, 2), "*"), round(cor_data$value, 2))), 
-            vjust = 1, size = 3, color = ifelse(cor_data$value > 0.9 & cor_data$value < 1, "red", "black"), show.legend = FALSE) +
+  geom_text(aes(label = round(cor_data$value, 2)), 
+            vjust = 1, size = 3, color = ifelse(abs(cor_data$value) > 0.75, "red", "black"), show.legend = FALSE) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  # 调整横坐标字体大小
         axis.text.y = element_text(size = 12),  # 调整纵坐标字体大小
         axis.title.x = element_blank(),  # 去掉横坐标标题
         axis.title.y = element_blank())  # 去掉纵坐标标题
 print(p)
-ggsave("pic/correlation_plot_EM_10.pdf", p, width = 24, height = 12)
+ggsave("pic/correlation_plot_AM_20.pdf", p, width = 24, height = 12)
 
 library(randomForest)
 library(tibble)
@@ -310,7 +318,7 @@ print(env_rf_mtry)
 
 # 可以继续使用你的代码进行特征选择
 varImpPlot(env_rf_mtry)
-var_ip <- importance(env_rf_mtry) %>% 
+var_ip_MSE <- importance(env_rf_mtry) %>% 
   as.data.frame() %>% 
   rownames_to_column("variables") %>% 
   rename(
@@ -318,6 +326,313 @@ var_ip <- importance(env_rf_mtry) %>%
   ) %>% 
   arrange(desc(percentage_increase_in_MSE)) %>% 
   head(10)
-var_ip
+
+print(var_ip_MSE)
+
+var_ip_purity <- importance(env_rf_mtry) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("variables") %>% 
+  rename(
+    'percentage_increase_in_MSE' = `%IncMSE`
+  ) %>% 
+  arrange(desc(IncNodePurity)) %>% 
+head(10)
+print(var_ip_purity)
 
 numeric_vars <- as.data.frame(numeric_vars)
+
+glm_20_M_1 <- glmmTMB(am ~  apd_20 + avepd_20 + minpd_20 + soc + tp + moisture + mntd20_unweigh + elevation + ap   + (1|sptype2/resource), reg_sc, family=beta_family)
+glm_20_M_1b <- update(glm_20_M_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_20_M_1b)
+glm_20_M_2 <- glmmTMB(am ~  apd_20 + avepd_20 + minpd_20 + soc + tp + moisture + mntd20_unweigh + elevation + ap + (1|resource), reg_sc, family=beta_family)
+glm_20_M_2b <- update(glm_20_M_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_20_M_2b)
+glm_20_M_3 <- glmmTMB(am ~  apd_20 + avepd_20 + minpd_20 + soc + tp + moisture + mntd20_unweigh + elevation + ap + (1|sptype2), reg_sc, family=beta_family)
+glm_20_M_3b <- update(glm_20_M_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_20_M_3b)
+glm_20_P_1 <- glmmTMB(am ~  apd_50 + AD  + aspect +  avepd_50 + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|sptype2/resource), reg_sc, family=beta_family)
+glm_20_P_1b <- update(glm_20_P_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_20_P_1b)
+glm_20_P_2 <- glmmTMB(am ~  apd_50 + AD  + aspect +  avepd_50 + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|resource), reg_sc, family=beta_family)
+glm_20_P_2b <- update(glm_20_P_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_20_P_2b)
+glm_20_P_3 <- glmmTMB(am ~  apd_50 + AD  + aspect +  avepd_50 + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|sptype2), reg_sc, family=beta_family)
+glm_20_P_3b <- update(glm_20_P_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_20_P_3b)
+
+#10
+# 选择数值型变量列
+numeric_vars <- reg_sc %>%
+  select(#qr_AM,
+    am,
+    #qr_BZ, qr_Pn, qr_Pq,
+    #qr_EM,
+    #GX, GY,DBH1,
+    DBH2, rel_dbh_multi, RDi,
+    AD, SRL, SRA,
+    soc, tn, tp, ap, ph, moisture, 
+    elevation, aspect, slope, convexity,
+    soil_pc1, soil_pc2,
+    #pd50_unweigh, mpd50_unweigh, mpd50_weigh, mntd50_unweigh, mntd50_weigh,
+    #pd20_unweigh, mpd20_unweigh, mpd20_weigh, mntd20_unweigh, mntd20_weigh,
+    pd10_unweigh, mpd10_unweigh, mpd10_weigh, mntd10_unweigh, mntd10_weigh,
+    #totpd_20, avepd_20, minpd_20, apd_20, ntpd_20, 
+    totpd_10, avepd_10, minpd_10, apd_10, ntpd_10, 
+    #totpd_50, avepd_50, minpd_50, apd_50, ntpd_50, 
+    #shannon_div_20, invsimpson_div_20, simpson_div_20,
+    shannon_div_10, invsimpson_div_10, simpson_div_10,
+    #shannon_div_50, invsimpson_div_50, simpson_div_50,
+    #BD_20, CBD_20, HBD_20
+    BD_10, CBD_10, HBD_10,
+    #BD_50, CBD_50, HBD_50,
+  )
+
+numeric_vars <- na.omit(numeric_vars)
+
+
+library(ggplot2)
+library(reshape2)
+
+# 计算相关性矩阵
+
+cor_matrix <- cor(numeric_vars, use = "complete.obs", method = "spearman")
+
+# 将相关性矩阵转换为长格式
+cor_data <- melt(cor_matrix)
+
+# 创建相关性图
+p <- ggplot(cor_data, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "#cbc9e2", mid = "#f7fcb9", high = "#cbc9e2", midpoint = 0) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Correlation Plot (am_10)") +
+  # 添加相关系数标签
+  # geom_text(aes(label = round(value, 2)), vjust = 1, size = 3, color = "black")+
+  
+  geom_text(aes(label = round(cor_data$value, 2)), 
+            vjust = 1, size = 3, color = ifelse(abs(cor_data$value) > 0.75, "red", "black"), show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  # 调整横坐标字体大小
+        axis.text.y = element_text(size = 12),  # 调整纵坐标字体大小
+        axis.title.x = element_blank(),  # 去掉横坐标标题
+        axis.title.y = element_blank())  # 去掉纵坐标标题
+print(p)
+ggsave("pic/correlation_plot_AM_10.pdf", p, width = 24, height = 12)
+
+library(randomForest)
+library(tibble)
+####使用随机森林选择变量
+# 使用你的数据集和目标变量
+set.seed(0725)
+env_rf <- randomForest(am ~ ., 
+                       data = numeric_vars, ntree = 1000)
+print(env_rf)
+
+# 进行参数调优
+mtry <- tuneRF(
+  numeric_vars,
+  numeric_vars$am,
+  ntreeTry = 1000,
+  stepFactor = 1.5,
+  improve = 0.01,
+  trace = TRUE,
+  plot = TRUE
+)
+
+best_m <- mtry[mtry[, 2] == min(mtry[, 2]), 1]
+print(mtry) # best_m with lowest oob error
+print(best_m)
+
+# 使用最佳的mtry值重新训练模型
+env_rf_mtry <-
+  randomForest(
+    am ~ .,
+    data = numeric_vars,
+    mtry = best_m,
+    importance = TRUE,
+    ntree = 1000
+  )
+print(env_rf_mtry)
+
+# 可以继续使用你的代码进行特征选择
+varImpPlot(env_rf_mtry)
+var_ip_MSE <- importance(env_rf_mtry) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("variables") %>% 
+  rename(
+    'percentage_increase_in_MSE' = `%IncMSE`
+  ) %>% 
+  arrange(desc(percentage_increase_in_MSE)) %>% 
+  head(10)
+
+print(var_ip_MSE)
+
+var_ip_purity <- importance(env_rf_mtry) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("variables") %>% 
+  rename(
+    'percentage_increase_in_MSE' = `%IncMSE`
+  ) %>% 
+  arrange(desc(IncNodePurity)) %>% 
+  head(10)
+print(var_ip_purity)
+
+numeric_vars <- as.data.frame(numeric_vars)
+
+glm_10_M_1 <- glmmTMB(am ~  apd_10 + totpd_10 + tp + minpd_10 + soc + avepd_10 + ap + moisture   + (1|sptype2/resource), reg_sc, family=beta_family)
+glm_10_M_1b <- update(glm_10_M_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_10_M_1b)
+glm_10_M_2 <- glmmTMB(am ~  apd_10 + totpd_10 + tp + minpd_10 + soc + avepd_10 + ap + moisture + (1|resource), reg_sc, family=beta_family)
+glm_10_M_2b <- update(glm_10_M_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_10_M_2b)
+glm_10_M_3 <- glmmTMB(am ~  apd_10 + totpd_10 + tp + minpd_10 + soc + avepd_10 + ap + moisture + (1|sptype2), reg_sc, family=beta_family)
+glm_10_M_3b <- update(glm_10_M_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_10_M_3b)
+glm_10_P_1 <- glmmTMB(am ~  mntd10_unweigh + aspect + DBH2 + AD + totpd_10 + pd10_unweigh + avepd_10 + apd_10 + minpd_10 + (1|sptype2/resource), reg_sc, family=beta_family)
+glm_10_P_1b <- update(glm_10_P_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_10_P_1b)
+glm_10_P_2 <- glmmTMB(am ~ mntd10_unweigh + aspect + DBH2 + AD + totpd_10 + pd10_unweigh + avepd_10 + apd_10 + minpd_10 + (1|resource), reg_sc, family=beta_family)
+glm_10_P_2b <- update(glm_10_P_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_10_P_2b)
+glm_10_P_3 <- glmmTMB(am ~  mntd10_unweigh + aspect + DBH2 + AD + totpd_10 + pd10_unweigh + avepd_10 + apd_10 + minpd_10 + (1|sptype2), reg_sc, family=beta_family)
+glm_10_P_3b <- update(glm_10_P_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_10_P_3b)
+
+
+#50
+# 选择数值型变量列
+numeric_vars <- reg_sc %>%
+  select(#qr_AM,
+    am,
+    #qr_BZ, qr_Pn, qr_Pq,
+    #qr_EM,
+    #GX, GY,DBH1,
+    DBH2, rel_dbh_multi, RDi,
+    AD, SRL, SRA,
+    soc, tn, tp, ap, ph, moisture, 
+    elevation, aspect, slope, convexity,
+    soil_pc1, soil_pc2,
+    pd50_unweigh, mpd50_unweigh, mpd50_weigh, mntd50_unweigh, mntd50_weigh,
+    #pd20_unweigh, mpd20_unweigh, mpd20_weigh, mntd20_unweigh, mntd20_weigh,
+    #pd10_unweigh, mpd10_unweigh, mpd10_weigh, mntd10_unweigh, mntd10_weigh,
+    #totpd_20, avepd_20, minpd_20, apd_20, ntpd_20, 
+    #totpd_10, avepd_10, minpd_10, apd_10, ntpd_10, 
+    totpd_50, avepd_50, minpd_50, apd_50, ntpd_50, 
+    #shannon_div_20, invsimpson_div_20, simpson_div_20,
+    #shannon_div_10, invsimpson_div_10, simpson_div_10,
+    shannon_div_50, invsimpson_div_50, simpson_div_50,
+    #BD_20, CBD_20, HBD_20
+    #BD_10, CBD_10, HBD_10,
+    BD_50, CBD_50, HBD_50,
+  )
+
+numeric_vars <- na.omit(numeric_vars)
+
+
+library(ggplot2)
+library(reshape2)
+
+# 计算相关性矩阵
+
+cor_matrix <- cor(numeric_vars, use = "complete.obs", method = "spearman")
+
+# 将相关性矩阵转换为长格式
+cor_data <- melt(cor_matrix)
+
+# 创建相关性图
+p <- ggplot(cor_data, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "#cbc9e2", mid = "#f7fcb9", high = "#cbc9e2", midpoint = 0) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Correlation Plot (am_50)") +
+  # 添加相关系数标签
+  # geom_text(aes(label = round(value, 2)), vjust = 1, size = 3, color = "black")+
+  
+  geom_text(aes(label = round(cor_data$value, 2)), 
+            vjust = 1, size = 3, color = ifelse(abs(cor_data$value) > 0.75, "red", "black"), show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  # 调整横坐标字体大小
+        axis.text.y = element_text(size = 12),  # 调整纵坐标字体大小
+        axis.title.x = element_blank(),  # 去掉横坐标标题
+        axis.title.y = element_blank())  # 去掉纵坐标标题
+print(p)
+ggsave("pic/correlation_plot_AM_50.pdf", p, width = 24, height = 12)
+
+library(randomForest)
+library(tibble)
+####使用随机森林选择变量
+# 使用你的数据集和目标变量
+set.seed(0725)
+env_rf <- randomForest(am ~ ., 
+                       data = numeric_vars, ntree = 1000)
+print(env_rf)
+
+# 进行参数调优
+mtry <- tuneRF(
+  numeric_vars,
+  numeric_vars$am,
+  ntreeTry = 1000,
+  stepFactor = 1.5,
+  improve = 0.01,
+  trace = TRUE,
+  plot = TRUE
+)
+
+best_m <- mtry[mtry[, 2] == min(mtry[, 2]), 1]
+print(mtry) # best_m with lowest oob error
+print(best_m)
+
+# 使用最佳的mtry值重新训练模型
+env_rf_mtry <-
+  randomForest(
+    am ~ .,
+    data = numeric_vars,
+    mtry = best_m,
+    importance = TRUE,
+    ntree = 1000
+  )
+print(env_rf_mtry)
+
+# 可以继续使用你的代码进行特征选择
+varImpPlot(env_rf_mtry)
+var_ip_MSE <- importance(env_rf_mtry) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("variables") %>% 
+  rename(
+    'percentage_increase_in_MSE' = `%IncMSE`
+  ) %>% 
+  arrange(desc(percentage_increase_in_MSE)) %>% 
+  head(10)
+print(var_ip_MSE$variables)
+
+var_ip_purity <- importance(env_rf_mtry) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("variables") %>% 
+  rename(
+    'percentage_increase_in_MSE' = `%IncMSE`
+  ) %>% 
+  arrange(desc(IncNodePurity)) %>% 
+  head(10)
+print(var_ip_purity$variables)
+
+numeric_vars <- as.data.frame(numeric_vars)
+
+glm_50_M_1 <- glmmTMB(am ~  apd_50 + tp + avepd_50 + AD + minpd_50 + SRL + ap + totpd_50 + tn + ntpd_50  + (1|sptype2/resource), reg_sc, family=beta_family)
+glm_50_M_1b <- update(glm_50_M_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_50_M_1b)
+glm_50_M_2 <- glmmTMB(am ~  apd_50 + tp + avepd_50 + AD + minpd_50 + SRL + ap + totpd_50 + tn + ntpd_50+ (1|resource), reg_sc, family=beta_family)
+glm_50_M_2b <- update(glm_50_M_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_50_M_2b)
+glm_50_M_3 <- glmmTMB(am ~  apd_50 + tp + avepd_50 + AD + minpd_50 + SRL + ap + totpd_50 + tn + ntpd_50+ (1|sptype2), reg_sc, family=beta_family)
+glm_50_M_3b <- update(glm_50_M_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_50_M_3b)
+glm_50_P_1 <- glmmTMB(am ~  apd_50 + AD + aspect +  avepd_50 + SRL + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|sptype2/resource), reg_sc, family=beta_family)
+glm_50_P_1b <- update(glm_50_P_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_50_P_1b)
+glm_50_P_2 <- glmmTMB(am ~  apd_50 + AD + aspect +  avepd_50 + SRL + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|resource), reg_sc, family=beta_family)
+glm_50_P_2b <- update(glm_50_P_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_50_P_2b)
+glm_50_P_3 <- glmmTMB(am ~  apd_50 + AD + aspect +  avepd_50 + SRL + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|sptype2), reg_sc, family=beta_family)
+glm_50_P_3b <- update(glm_50_P_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
+summary(glm_50_P_3b)
+
