@@ -171,11 +171,10 @@ reg <- reg %>%
 
 scale_to_01 <- function(x) {
   # 使用na.rm参数忽略NA值
-  scaled_data <- (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
-  return(scaled_data)
+(x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
 }
-
-scaled_data <- reg %>%
+scale_to_01(c(1,1,1,1,2))
+scale_data <- reg %>%
   select(qr_AM, qr_BZ, qr_Pn, qr_Pq,qr_EM, am, em, 
          GX, GY,DBH1, DBH2, rel_dbh_multi, AD, SRL, SRA,
          soc, tn, tp, ap, ph, moisture,
@@ -191,9 +190,10 @@ scaled_data <- reg %>%
          shannon_div_50, invsimpson_div_50, simpson_div_50,
          BD_20, CBD_20, HBD_20,
          BD_10, CBD_10, HBD_10,
-         BD_50, CBD_50, HBD_50) %>%
-  scale_to_01()
-
+         BD_50, CBD_50, HBD_50)
+scale_data <- as.matrix(scale_data)
+scale_data <- apply(scale_data,2,scale_to_01)
+scale_data <- as.data.frame(scale_data)
 reg_sc <- reg %>%
   select( -qr_AM, -qr_BZ, -qr_Pn, -qr_Pq, -qr_EM, -am, -em,
           -GX, -GY, -DBH1, -DBH2, -rel_dbh_multi, -AD, -SRL, -SRA,
@@ -211,9 +211,9 @@ reg_sc <- reg %>%
           -BD_20, -CBD_20, -HBD_20,
           -BD_10, -CBD_10, -HBD_10,
           -BD_50, -CBD_50, -HBD_50)%>%
-  bind_cols(scaled_data)
+  bind_cols(scale_data)
 
-rm(scaled_data)
+rm(scale_data)
 
 save(reg, file = "data/data_for_reg.RData")
 
