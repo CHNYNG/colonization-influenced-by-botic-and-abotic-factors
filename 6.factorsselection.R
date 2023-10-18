@@ -175,7 +175,7 @@ scale_to_01 <- function(x) {
 }
 scale_to_01(c(1,1,1,1,2))
 scale_data <- reg %>%
-  select(qr_AM, qr_BZ, qr_Pn, qr_Pq,qr_EM, am, em, 
+  select(qr_AM, qr_BZ, qr_Pn, qr_Pq,qr_EM,
          GX, GY,DBH1, DBH2, rel_dbh_multi, AD, SRL, SRA,
          soc, tn, tp, ap, ph, moisture,
          elevation, aspect, slope, convexity,
@@ -195,7 +195,7 @@ scale_data <- as.matrix(scale_data)
 scale_data <- apply(scale_data,2,scale_to_01)
 scale_data <- as.data.frame(scale_data)
 reg_sc <- reg %>%
-  select( -qr_AM, -qr_BZ, -qr_Pn, -qr_Pq, -qr_EM, -am, -em,
+  select( -qr_AM, -qr_BZ, -qr_Pn, -qr_Pq, -qr_EM, 
           -GX, -GY, -DBH1, -DBH2, -rel_dbh_multi, -AD, -SRL, -SRA,
           -soc, -tn, -tp, -ap, -ph, -moisture, 
           -elevation, -aspect, -slope, -convexity,
@@ -264,7 +264,7 @@ cor_data <- melt(cor_matrix)
 # 创建相关性图
 p <- ggplot(cor_data, aes(Var1, Var2, fill = value)) +
   geom_tile() +
-  scale_fill_gradient2(low = "#cbc9e2", mid = "#f7fcb9", high = "#cbc9e2", midpoint = 0) +
+  scale_fill_gradient2(low = "#f7fcb9", mid = "#cbc9e2", high = "#f7fcb9", midpoint = 0) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title = "Correlation Plot (am_20)") +
@@ -326,7 +326,7 @@ var_ip_MSE <- importance(env_rf_mtry) %>%
   arrange(desc(percentage_increase_in_MSE)) %>% 
   head(10)
 
-print(var_ip_MSE)
+print(var_ip_MSE$variables)
 
 var_ip_purity <- importance(env_rf_mtry) %>% 
   as.data.frame() %>% 
@@ -336,26 +336,28 @@ var_ip_purity <- importance(env_rf_mtry) %>%
   ) %>% 
   arrange(desc(IncNodePurity)) %>% 
 head(10)
-print(var_ip_purity)
+print(var_ip_purity$variables)
 
 numeric_vars <- as.data.frame(numeric_vars)
+#apd_20 + avepd_20 + minpd_20 + soc + pd20_unweigh + tp + RDi + tn + moisture + ap
 
-glm_20_M_1 <- glmmTMB(am ~  apd_20 + avepd_20 + minpd_20 + soc + tp + moisture + mntd20_unweigh + elevation + ap   + (1|sptype2/resource), reg_sc, family=beta_family)
+glm_20_M_1 <- glmmTMB(am ~  apd_20 + minpd_20 + soc + pd20_unweigh + tp + tn + moisture + ap + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_20_M_1b <- update(glm_20_M_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20_M_1b)
-glm_20_M_2 <- glmmTMB(am ~  apd_20 + avepd_20 + minpd_20 + soc + tp + moisture + mntd20_unweigh + elevation + ap + (1|resource), reg_sc, family=beta_family)
+glm_20_M_2 <- glmmTMB(am ~  apd_20 + minpd_20 + soc + pd20_unweigh + tp + tn + moisture + ap + (1|resource), reg_sc, family=beta_family)
 glm_20_M_2b <- update(glm_20_M_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20_M_2b)
-glm_20_M_3 <- glmmTMB(am ~  apd_20 + avepd_20 + minpd_20 + soc + tp + moisture + mntd20_unweigh + elevation + ap + (1|sptype2), reg_sc, family=beta_family)
+glm_20_M_3 <- glmmTMB(am ~  apd_20 + minpd_20 + soc + pd20_unweigh + tp + tn + moisture + ap + (1|sptype2), reg_sc, family=beta_family)
 glm_20_M_3b <- update(glm_20_M_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20_M_3b)
-glm_20_P_1 <- glmmTMB(am ~  apd_50 + AD  + aspect +  avepd_50 + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|sptype2/resource), reg_sc, family=beta_family)
+#mntd20_unweigh + aspect + AD + avepd_20 + DBH2 + pd20_unweigh + apd_20 + minpd_20 + convexity
+glm_20_P_1 <- glmmTMB(am ~  mntd20_unweigh + aspect + AD + avepd_20 + DBH2 + pd20_unweigh + apd_20 + minpd_20 + convexity + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_20_P_1b <- update(glm_20_P_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20_P_1b)
-glm_20_P_2 <- glmmTMB(am ~  apd_50 + AD  + aspect +  avepd_50 + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|resource), reg_sc, family=beta_family)
+glm_20_P_2 <- glmmTMB(am ~  mntd20_unweigh + aspect + AD + avepd_20 + DBH2 + pd20_unweigh + apd_20 + minpd_20 + convexity + (1|resource), reg_sc, family=beta_family)
 glm_20_P_2b <- update(glm_20_P_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20_P_2b)
-glm_20_P_3 <- glmmTMB(am ~  apd_50 + AD  + aspect +  avepd_50 + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|sptype2), reg_sc, family=beta_family)
+glm_20_P_3 <- glmmTMB(am ~  mntd20_unweigh + aspect + AD + avepd_20 + DBH2 + pd20_unweigh + apd_20 + minpd_20 + convexity + (1|sptype2), reg_sc, family=beta_family)
 glm_20_P_3b <- update(glm_20_P_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20_P_3b)
 
@@ -464,7 +466,7 @@ var_ip_MSE <- importance(env_rf_mtry) %>%
   arrange(desc(percentage_increase_in_MSE)) %>% 
   head(10)
 
-print(var_ip_MSE)
+print(var_ip_MSE$variables)
 
 var_ip_purity <- importance(env_rf_mtry) %>% 
   as.data.frame() %>% 
@@ -474,26 +476,29 @@ var_ip_purity <- importance(env_rf_mtry) %>%
   ) %>% 
   arrange(desc(IncNodePurity)) %>% 
   head(10)
-print(var_ip_purity)
+print(var_ip_purity$variables)
 
 numeric_vars <- as.data.frame(numeric_vars)
 
-glm_10_M_1 <- glmmTMB(am ~  apd_10 + totpd_10 + tp + minpd_10 + soc + avepd_10 + ap + moisture   + (1|sptype2/resource), reg_sc, family=beta_family)
+#apd_10 + RDi + totpd_10 + moisture + minpd_10 + shannon_div_10 + soc
+glm_10_M_1 <- glmmTMB(am ~  apd_10 + RDi + totpd_10 + moisture + minpd_10 + shannon_div_10 + soc   + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_10_M_1b <- update(glm_10_M_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10_M_1b)
-glm_10_M_2 <- glmmTMB(am ~  apd_10 + totpd_10 + tp + minpd_10 + soc + avepd_10 + ap + moisture + (1|resource), reg_sc, family=beta_family)
+glm_10_M_2 <- glmmTMB(am ~  apd_10 + RDi + totpd_10 + moisture + minpd_10 + shannon_div_10 + soc + (1|resource), reg_sc, family=beta_family)
 glm_10_M_2b <- update(glm_10_M_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10_M_2b)
-glm_10_M_3 <- glmmTMB(am ~  apd_10 + totpd_10 + tp + minpd_10 + soc + avepd_10 + ap + moisture + (1|sptype2), reg_sc, family=beta_family)
+glm_10_M_3 <- glmmTMB(am ~  apd_10 + RDi + totpd_10 + moisture + minpd_10 + shannon_div_10 + soc + (1|sptype2), reg_sc, family=beta_family)
 glm_10_M_3b <- update(glm_10_M_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10_M_3b)
-glm_10_P_1 <- glmmTMB(am ~  mntd10_unweigh + aspect + DBH2 + AD + totpd_10 + pd10_unweigh + avepd_10 + apd_10 + minpd_10 + (1|sptype2/resource), reg_sc, family=beta_family)
+
+#mntd10_unweigh + aspect + DBH2 + AD + pd10_unweigh + totpd_10 + avepd_10 + minpd_10
+glm_10_P_1 <- glmmTMB(am ~  mntd10_unweigh + aspect + DBH2 + AD + pd10_unweigh + totpd_10 + avepd_10 + minpd_10 + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_10_P_1b <- update(glm_10_P_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10_P_1b)
-glm_10_P_2 <- glmmTMB(am ~ mntd10_unweigh + aspect + DBH2 + AD + totpd_10 + pd10_unweigh + avepd_10 + apd_10 + minpd_10 + (1|resource), reg_sc, family=beta_family)
+glm_10_P_2 <- glmmTMB(am ~ mntd10_unweigh + aspect + DBH2 + AD + pd10_unweigh + totpd_10 + avepd_10 + minpd_10 + (1|resource), reg_sc, family=beta_family)
 glm_10_P_2b <- update(glm_10_P_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10_P_2b)
-glm_10_P_3 <- glmmTMB(am ~  mntd10_unweigh + aspect + DBH2 + AD + totpd_10 + pd10_unweigh + avepd_10 + apd_10 + minpd_10 + (1|sptype2), reg_sc, family=beta_family)
+glm_10_P_3 <- glmmTMB(am ~  mntd10_unweigh + aspect + DBH2 + AD + pd10_unweigh + totpd_10 + avepd_10 + minpd_10 + (1|sptype2), reg_sc, family=beta_family)
 glm_10_P_3b <- update(glm_10_P_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10_P_3b)
 
@@ -615,23 +620,25 @@ var_ip_purity <- importance(env_rf_mtry) %>%
 print(var_ip_purity$variables)
 
 numeric_vars <- as.data.frame(numeric_vars)
+#apd_50 + tp + minpd_50 + totpd_50 + AD + ap
 
-glm_50_M_1 <- glmmTMB(am ~  apd_50 + tp + avepd_50 + AD + minpd_50 + SRL + ap + totpd_50 + tn + ntpd_50  + (1|sptype2/resource), reg_sc, family=beta_family)
+glm_50_M_1 <- glmmTMB(am ~  apd_50 + tp + minpd_50 + totpd_50 + AD + ap  + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_50_M_1b <- update(glm_50_M_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50_M_1b)
-glm_50_M_2 <- glmmTMB(am ~  apd_50 + tp + avepd_50 + AD + minpd_50 + SRL + ap + totpd_50 + tn + ntpd_50+ (1|resource), reg_sc, family=beta_family)
+glm_50_M_2 <- glmmTMB(am ~  apd_50 + tp + minpd_50 + totpd_50 + AD + ap + (1|resource), reg_sc, family=beta_family)
 glm_50_M_2b <- update(glm_50_M_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50_M_2b)
-glm_50_M_3 <- glmmTMB(am ~  apd_50 + tp + avepd_50 + AD + minpd_50 + SRL + ap + totpd_50 + tn + ntpd_50+ (1|sptype2), reg_sc, family=beta_family)
+glm_50_M_3 <- glmmTMB(am ~  apd_50 + tp + minpd_50 + totpd_50 + AD + ap + (1|sptype2), reg_sc, family=beta_family)
 glm_50_M_3b <- update(glm_50_M_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50_M_3b)
-glm_50_P_1 <- glmmTMB(am ~  apd_50 + AD + aspect +  avepd_50 + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|sptype2/resource), reg_sc, family=beta_family)
+#apd_50 + AD + aspect + minpd_50 + pd50_unweigh + DBH2 + mntd50_unweigh + tp  
+glm_50_P_1 <- glmmTMB(am ~  apd_50 + AD + aspect + minpd_50 + pd50_unweigh + DBH2 + mntd50_unweigh + tp   + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_50_P_1b <- update(glm_50_P_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50_P_1b)
-glm_50_P_2 <- glmmTMB(am ~  apd_50 + AD + aspect +  avepd_50 + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|resource), reg_sc, family=beta_family)
+glm_50_P_2 <- glmmTMB(am ~  apd_50 + AD + aspect + minpd_50 + pd50_unweigh + DBH2 + mntd50_unweigh + tp   + (1|resource), reg_sc, family=beta_family)
 glm_50_P_2b <- update(glm_50_P_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50_P_2b)
-glm_50_P_3 <- glmmTMB(am ~  apd_50 + AD + aspect +  avepd_50 + pd50_unweigh + DBH2 + tp + ap + ntpd_50 + (1|sptype2), reg_sc, family=beta_family)
+glm_50_P_3 <- glmmTMB(am ~  apd_50 + AD + aspect + minpd_50 + pd50_unweigh + DBH2 + mntd50_unweigh + tp   + (1|sptype2), reg_sc, family=beta_family)
 glm_50_P_3b <- update(glm_50_P_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50_P_3b)
 
