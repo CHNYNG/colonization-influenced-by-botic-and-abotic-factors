@@ -220,6 +220,9 @@ save(reg, file = "data/data_for_reg.RData")
 #####
 #选择回归用的变量
 #####
+#####
+#关于am
+######
 
 #20
 # 选择数值型变量列
@@ -762,30 +765,32 @@ var_ip_purity <- importance(env_rf_mtry) %>%
 print(var_ip_purity$variables)
 
 numeric_vars <- as.data.frame(numeric_vars)
+#mpd20_weigh + soil_pc2 + apd_20 + slope + elevation + simpson_div_20 + tn + ntpd_20 + BD_20  
 
-glm_20em_M_1 <- glmmTMB(em ~  tn + RDi + apd_20 + soil_pc2 + elevation + slope + soc + pd20_unweigh + SRL + CBD_20 + (1|sptype2/resource), reg_sc, family=beta_family)
+glm_20em_M_1 <- glmmTMB(em ~  mpd20_weigh + soil_pc2 + apd_20 + slope + elevation + simpson_div_20 + tn + ntpd_20 + BD_20 + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_20em_M_1b <- update(glm_20em_M_1, control = glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(glm_20em_M_1b)
-glm_20em_M_2 <- glmmTMB(em ~   tn + RDi + apd_20 + soil_pc2 + elevation + slope + soc + pd20_unweigh + SRL + CBD_20
+glm_20em_M_2 <- glmmTMB(em ~   mpd20_weigh + soil_pc2 + apd_20 + slope + elevation + simpson_div_20 + tn + ntpd_20 + BD_20
  + (1|resource), reg_sc, family=beta_family)
 glm_20em_M_2b <- update(glm_20em_M_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20em_M_2b)
-glm_20em_M_3 <- glmmTMB(em ~   tn + RDi + apd_20 + soil_pc2 + elevation + slope + soc + pd20_unweigh + SRL + CBD_20 + (1|sptype2), reg_sc, family=beta_family)
+glm_20em_M_3 <- glmmTMB(em ~   mpd20_weigh + soil_pc2 + apd_20 + slope + elevation + simpson_div_20 + tn + ntpd_20 + BD_20 + (1|sptype2), reg_sc, family=beta_family)
 glm_20em_M_3b <- update(glm_20em_M_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20em_M_3b)
-glm_20em_M_4 <- glmmTMB(em ~ tn + RDi + apd_20 + soil_pc2 + elevation + slope + soc + pd20_unweigh + SRL + CBD_20 , reg_sc, family=beta_family)
+glm_20em_M_4 <- glmmTMB(em ~ mpd20_weigh + soil_pc2 + apd_20 + slope + elevation + simpson_div_20 + tn + ntpd_20 + BD_20 , reg_sc, family=beta_family)
 glm_20em_M_4b <- update(glm_20em_M_4, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20em_M_4b)
-glm_20em_P_1 <- glmmTMB(em ~  mntd20_weigh + tn + soc + slope + mpd20_unweigh + aspect + ap + apd_20 + convexity + (1|sptype2/resource), reg_sc, family=beta_family)
+#mntd20_weigh + tn + slope + mpd20_unweigh + ap + aspect + convexity + totpd_20 + apd_20
+glm_20em_P_1 <- glmmTMB(em ~  mntd20_weigh + tn + slope + mpd20_unweigh + ap + aspect + convexity + totpd_20 + apd_20 + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_20em_P_1b <- update(glm_20em_P_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20em_P_1b)
-glm_20em_P_2 <- glmmTMB(em ~  mntd20_weigh + tn + soc + slope + mpd20_unweigh + aspect + ap + apd_20 + convexity + (1|resource), reg_sc, family=beta_family)
+glm_20em_P_2 <- glmmTMB(em ~  mntd20_weigh + tn + slope + mpd20_unweigh + ap + aspect + convexity + totpd_20 + apd_20 + (1|resource), reg_sc, family=beta_family)
 glm_20em_P_2b <- update(glm_20em_P_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20em_P_2b)
-glm_20em_P_3 <- glmmTMB(em ~  mntd20_weigh + tn + soc + slope + mpd20_unweigh + aspect + ap + apd_20 + convexity + (1|sptype2), reg_sc, family=beta_family)
+glm_20em_P_3 <- glmmTMB(em ~  mntd20_weigh + tn + slope + mpd20_unweigh + ap + aspect + convexity + totpd_20 + apd_20 + (1|sptype2), reg_sc, family=beta_family)
 glm_20em_P_3b <- update(glm_20em_P_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20em_P_3b)
-glm_20em_P_4 <- glmmTMB(em ~  mntd20_weigh + tn + soc + slope + mpd20_unweigh + aspect + ap + apd_20 + convexity , reg_sc, family=beta_family)
+glm_20em_P_4 <- glmmTMB(em ~  mntd20_weigh + tn + slope + mpd20_unweigh + ap + aspect + convexity + totpd_20 + apd_20 , reg_sc, family=beta_family)
 glm_20em_P_4b <- update(glm_20em_P_4, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_20em_P_4)
 
@@ -907,25 +912,27 @@ print(var_ip_purity$variables)
 
 numeric_vars <- as.data.frame(numeric_vars)
 
-glm_10em_M_1 <- glmmTMB(em ~  tn + mpd10_weigh + RDi + soil_pc2 + moisture + avepd_10 + SRL + pd10_unweigh  + rel_dbh_multi + totpd_10 + (1|sptype2/resource), reg_sc, family=beta_family)
+#RDi + moisture + tn + totpd_10 + AD + SRL + soil_pc2 + mpd10_weigh + rel_dbh_multi
+glm_10em_M_1 <- glmmTMB(em ~  RDi + moisture + tn + totpd_10 + AD + SRL + soil_pc2 + mpd10_weigh + rel_dbh_multi + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_10em_M_1b <- update(glm_10em_M_1, control = glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(glm_10em_M_1b)
-glm_10em_M_2 <- glmmTMB(em ~   tn + mpd10_weigh + RDi + soil_pc2 + moisture + avepd_10 + SRL + pd10_unweigh  + rel_dbh_multi + totpd_10 + (1|resource), reg_sc, family=beta_family)
+glm_10em_M_2 <- glmmTMB(em ~   RDi + moisture + tn + totpd_10 + AD + SRL + soil_pc2 + mpd10_weigh + rel_dbh_multi + (1|resource), reg_sc, family=beta_family)
 glm_10em_M_2b <- update(glm_10em_M_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10em_M_2b)
-glm_10em_M_3 <- glmmTMB(em ~   tn + mpd10_weigh + RDi + soil_pc2 + moisture + avepd_10 + SRL + pd10_unweigh  + rel_dbh_multi + totpd_10 + (1|sptype2), reg_sc, family=beta_family)
+glm_10em_M_3 <- glmmTMB(em ~   RDi + moisture + tn + totpd_10 + AD + SRL + soil_pc2 + mpd10_weigh + rel_dbh_multi + (1|sptype2), reg_sc, family=beta_family)
 glm_10em_M_3b <- update(glm_10em_M_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10em_M_3b)
-glm_10em_M_4 <- glmmTMB(em ~   tn + mpd10_weigh + RDi + soil_pc2 + moisture + avepd_10 + SRL + pd10_unweigh  + rel_dbh_multi + totpd_10 , reg_sc, family=beta_family)
+glm_10em_M_4 <- glmmTMB(em ~   RDi + moisture + tn + totpd_10 + AD + SRL + soil_pc2 + mpd10_weigh + rel_dbh_multi , reg_sc, family=beta_family)
 glm_10em_M_4b <- update(glm_10em_M_4, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10em_M_4b)
-glm_10em_P_1 <- glmmTMB(em ~  mntd10_weigh + tn + slope + soc + mpd10_unweigh + ap + shannon_div_10 + soil_pc1 + elevation + AD + (1|sptype2/resource), reg_sc, family=beta_family)
+#mntd10_weigh + tn + mpd10_unweigh + slope + shannon_div_10 + ap + convexity + pd10_unweigh  
+glm_10em_P_1 <- glmmTMB(em ~  mntd10_weigh + tn + mpd10_unweigh + slope + shannon_div_10 + ap + convexity + pd10_unweigh + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_10em_P_1b <- update(glm_10em_P_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10em_P_1b)
-glm_10em_P_2 <- glmmTMB(em ~  mntd10_weigh + tn + slope + soc + mpd10_unweigh + ap + shannon_div_10 + soil_pc1 + elevation + AD + (1|resource), reg_sc, family=beta_family)
+glm_10em_P_2 <- glmmTMB(em ~  mntd10_weigh + tn + mpd10_unweigh + slope + shannon_div_10 + ap + convexity + pd10_unweigh + (1|resource), reg_sc, family=beta_family)
 glm_10em_P_2b <- update(glm_10em_P_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10em_P_2b)
-glm_10em_P_3 <- glmmTMB(em ~  mntd10_weigh + tn + slope + soc + mpd10_unweigh + ap + shannon_div_10 + soil_pc1 + elevation + AD + (1|sptype2), reg_sc, family=beta_family)
+glm_10em_P_3 <- glmmTMB(em ~  mntd10_weigh + tn + mpd10_unweigh + slope + shannon_div_10 + ap + convexity + pd10_unweigh + (1|sptype2), reg_sc, family=beta_family)
 glm_10em_P_3b <- update(glm_10em_P_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_10em_P_3b)
 
@@ -1046,23 +1053,24 @@ var_ip_purity <- importance(env_rf_mtry) %>%
 print(var_ip_purity$variables)
 
 numeric_vars <- as.data.frame(numeric_vars)
-
-glm_50em_M_1 <- glmmTMB(em ~  mntd50_unweigh + RDi + SRL + mntd50_weigh + DBH2 + invsimpson_div_50 + BD_50 + totpd_50 + (1|sptype2/resource), reg_sc, family=beta_family)
+#mntd50_unweigh + RDi + slope + DBH2 + tn + mntd50_weigh + aspect + soc + CBD_50 + SRL
+glm_50em_M_1 <- glmmTMB(em ~  mntd50_unweigh + RDi + slope + DBH2 + tn + mntd50_weigh + aspect + soc + CBD_50 + SRL + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_50em_M_1b <- update(glm_50em_M_1, control = glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(glm_50em_M_1b)
-glm_50em_M_2 <- glmmTMB(em ~  mntd50_unweigh + RDi + SRL + mntd50_weigh + DBH2 + invsimpson_div_50 + BD_50 + totpd_50 , reg_sc, family=beta_family)
+glm_50em_M_2 <- glmmTMB(em ~  mntd50_unweigh + RDi + slope + DBH2 + tn + mntd50_weigh + aspect + soc + CBD_50 + SRL , reg_sc, family=beta_family)
 glm_50em_M_2b <- update(glm_50em_M_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50em_M_2b)
-glm_50em_M_3 <- glmmTMB(em ~  mntd50_unweigh + RDi + SRL + mntd50_weigh + DBH2 + invsimpson_div_50 + BD_50 + totpd_50 + (1|sptype2), reg_sc, family=beta_family)
+glm_50em_M_3 <- glmmTMB(em ~  mntd50_unweigh + RDi + slope + DBH2 + tn + mntd50_weigh + aspect + soc + CBD_50 + SRL + (1|sptype2), reg_sc, family=beta_family)
 glm_50em_M_3b <- update(glm_50em_M_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50em_M_3b)
-glm_50em_P_1 <- glmmTMB(em ~  mntd50_weigh + slope + mntd50_unweigh + tn + ap + soil_pc1 +  convexity +  aspect +  SRL + (1|sptype2/resource), reg_sc, family=beta_family)
+#mntd50_weigh + slope + mntd50_unweigh + tn + ap + soc + aspect + SRL + convexity + elevation
+glm_50em_P_1 <- glmmTMB(em ~  mntd50_weigh + slope + mntd50_unweigh + tn + ap + soc + aspect + SRL + convexity + elevation + (1|sptype2/resource), reg_sc, family=beta_family)
 glm_50em_P_1b <- update(glm_50em_P_1, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50em_P_1b)
-glm_50em_P_2 <- glmmTMB(em ~  mntd50_weigh + slope + mntd50_unweigh + tn + ap + soil_pc1 +  convexity +  aspect +  SRL + (1|resource), reg_sc, family=beta_family)
+glm_50em_P_2 <- glmmTMB(em ~  mntd50_weigh + slope + mntd50_unweigh + tn + ap + soc + aspect + SRL + convexity + elevation + (1|resource), reg_sc, family=beta_family)
 glm_50em_P_2b <- update(glm_50em_P_2, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50em_P_2b)
-glm_50em_P_3 <- glmmTMB(em ~  mntd50_weigh + slope + mntd50_unweigh + tn + ap + soil_pc1 +  convexity +  aspect +  SRL + (1|sptype2), reg_sc, family=beta_family)
+glm_50em_P_3 <- glmmTMB(em ~  mntd50_weigh + slope + mntd50_unweigh + tn + ap + soc + aspect + SRL + convexity + elevation + (1|sptype2), reg_sc, family=beta_family)
 glm_50em_P_3b <- update(glm_50em_P_3, control = glmmTMBControl(optimizer = optim, optArgs = list(method = "BFGS")))
 summary(glm_50em_P_3b)
 
