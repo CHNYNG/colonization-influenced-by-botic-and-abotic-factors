@@ -154,6 +154,52 @@ for (i in 1:dim(sp_loc)[1]) {
   HBD_50[i] <- sum(hsd_sub_het$ba_distance_weighted)
 }
 
+BD_100 <- c()
+CBD_100 <- c()
+HBD_100 <- c()
+
+for (i in 1:dim(sp_loc)[1]) {
+  
+  # 100m circle
+  hsd_sub <- hsd_alive_singlebr %>%
+    mutate(
+      distance = sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2)
+    ) %>%
+    filter(distance <= 100)
+  hsd_sub <- hsd_sub %>%
+    mutate(basal_area = pi * (dbh_multi / 2) ^ 2,
+           ba_distance_weighted = ifelse(distance == 0 , 0, basal_area / distance))
+  
+  #不分同种异种sum之后再相除，影响可能是二次方的关系
+  BD_100[i] <- sum(hsd_sub$ba_distance_weighted)
+  
+  #同种
+  con_species <- hsd_sub %>%
+    filter(TagNew == sp_loc$TagNew[i]) %>%
+    pull(scientific.name) %>%
+    unique()
+  
+  if (length(con_species) == 0) {
+    # 处理con_species为空的情况，例如将CBD_100[i]设置为0
+    CBD_100[i] <- 0
+  } else {
+    hsd_sub_con <- hsd_sub %>%
+      filter(scientific.name %in% con_species)  # 使用%in%来匹配多个scientific.name
+    
+    CBD_100[i] <- sum(hsd_sub_con$ba_distance_weighted)
+  }
+  
+  #异种
+  het_species <- hsd_sub %>%
+    filter(TagNew != sp_loc$TagNew[i]) %>%
+    pull(scientific.name)
+  
+  hsd_sub_het <- hsd_sub %>%
+    filter(scientific.name %in% het_species)
+  
+  HBD_100[i] <- sum(hsd_sub_het$ba_distance_weighted)
+}
+
 hsd_neighbor <- data.frame(sp_loc$TagNew)
 colnames(hsd_neighbor) <- "TagNew"
 
@@ -168,5 +214,10 @@ hsd_neighbor <- hsd_neighbor %>%
          CBD_10=CBD_10,
          HBD_10=HBD_10)
 
-rm(BD_20,CBD_20,HBD_20,BD_50,CBD_50,HBD_50,BD_10,CBD_10,HBD_10,
+hsd_neighbor <- hsd_neighbor %>%
+  mutate(BD_100 =BD_100,
+         CBD_100=CBD_100,
+         HBD_100=HBD_100)
+
+rm(BD_20,CBD_20,HBD_20,BD_50,CBD_50,HBD_50,BD_10,CBD_10,HBD_10,BD_100,CBD_100,HBD_100,
    hsd_sub,hsd_sub_con,hsd_sub_het, con_species, het_species)

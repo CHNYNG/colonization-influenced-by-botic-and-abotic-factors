@@ -16,14 +16,14 @@ library(picante)
 hsd_phytr <- read.tree("data/hsd_tree_vphylo.rwk")
 
 library(dplyr)
-focal_sp <- data.frame(
-  gx = as.numeric(root_qrl$GX),
-  gy = as.numeric(root_qrl$GY),
-  latin_name = root_qrl$Latin
-) %>% 
-  mutate(
-    latin_name = gsub(" ", "_",latin_name)
+focal_sp<- sp_loc %>%
+  left_join(., hsd_alive_singlebr, "TagNew") %>%
+  select(GX.x, GY.x, scientific.name) %>%
+  rename(
+    GX = GX.x,
+    GY = GY.x
   )
+
 
   # null model of phy tree
   null.phy <- function(phytree, n, focal_label, neigh_label) {
@@ -73,7 +73,7 @@ for (i in 1:dim(focal_sp)[1]) {
   
   # 20m circle
   hsd_sub <- hsd_alive_singlebr %>% 
-    filter(sqrt((GX - focal_sp$gx[i])^2 + (GY - focal_sp$gy[i])^2) <= 20)
+    filter(sqrt((GX - focal_sp$GX[i])^2 + (GY - focal_sp$GY[i])^2) <= 20)
   
   # phylo tree with species in 20m circle
   tr_sub <- hsd_phytr %>% 
@@ -82,7 +82,7 @@ for (i in 1:dim(focal_sp)[1]) {
   phy_dist <- cophenetic(tr_sub)
   
   # focal species and neighbor species in phy tree
-  focal_sp_label <- focal_sp$latin_name[i]
+  focal_sp_label <- focal_sp$scientific.name[i]
   
   neigh_sp_label <- tr_sub$tip.label[tr_sub$tip.label != focal_sp_label]
   
@@ -119,7 +119,7 @@ for (i in 1:dim(focal_sp)[1]) {
   
   # 10m circle
   hsd_sub <- hsd_alive_singlebr %>% 
-    filter(sqrt((GX - focal_sp$gx[i])^2 + (GY - focal_sp$gy[i])^2) <= 10)
+    filter(sqrt((GX - focal_sp$GX[i])^2 + (GY - focal_sp$GY[i])^2) <= 10)
   
   # phylo tree with species in 10m circle
   tr_sub <- hsd_phytr %>% 
@@ -128,7 +128,7 @@ for (i in 1:dim(focal_sp)[1]) {
   phy_dist <- cophenetic(tr_sub)
   
   # focal species and neighbor species in phy tree
-  focal_sp_label <- focal_sp$latin_name[i]
+  focal_sp_label <- focal_sp$scientific.name[i]
   
   neigh_sp_label <- tr_sub$tip.label[tr_sub$tip.label != focal_sp_label]
   
@@ -165,7 +165,7 @@ for (i in 1:dim(focal_sp)[1]) {
   
   # 50m circle
   hsd_sub <- hsd_alive_singlebr %>% 
-    filter(sqrt((GX - focal_sp$gx[i])^2 + (GY - focal_sp$gy[i])^2) <= 50)
+    filter(sqrt((GX - focal_sp$GX[i])^2 + (GY - focal_sp$GY[i])^2) <= 50)
   
   # phylo tree with species in 50m circle
   tr_sub <- hsd_phytr %>% 
@@ -174,7 +174,7 @@ for (i in 1:dim(focal_sp)[1]) {
   phy_dist <- cophenetic(tr_sub)
   
   # focal species and neighbor species in phy tree
-  focal_sp_label <- focal_sp$latin_name[i]
+  focal_sp_label <- focal_sp$scientific.name[i]
   
   neigh_sp_label <- tr_sub$tip.label[tr_sub$tip.label != focal_sp_label]
   
@@ -201,12 +201,61 @@ for (i in 1:dim(focal_sp)[1]) {
   
 }
 
+totpd_100 <- c()
+avepd_100 <- c()
+minpd_100 <- c()
+apd_100 <- c() 
+ntpd_100 <- c()
+
+for (i in 1:dim(focal_sp)[1]) {
+  
+  # 100m circle
+  hsd_sub <- hsd_alive_singlebr %>% 
+    filter(sqrt((GX - focal_sp$GX[i])^2 + (GY - focal_sp$GY[i])^2) <= 100)
+  
+  # phylo tree with species in 100m circle
+  tr_sub <- hsd_phytr %>% 
+    drop.tip(setdiff(hsd_phytr$tip.label, unique(hsd_sub$scientific.name)))
+  
+  phy_dist <- cophenetic(tr_sub)
+  
+  # focal species and neighbor species in phy tree
+  focal_sp_label <- focal_sp$scientific.name[i]
+  
+  neigh_sp_label <- tr_sub$tip.label[tr_sub$tip.label != focal_sp_label]
+  
+  focal_sp_in_phydist <- which(tr_sub$tip.label == focal_sp_label)
+  
+  neigh_sp_in_phydist <- which(tr_sub$tip.label %in% neigh_sp_label)
+  
+  
+  # compute phy indicies 
+  totpd_100[i] <- sum(phy_dist[focal_sp_in_phydist, neigh_sp_in_phydist])
+  
+  avepd_100[i] <- mean(phy_dist[focal_sp_in_phydist, neigh_sp_in_phydist])
+  
+  minpd_100[i] <- min(phy_dist[focal_sp_in_phydist, neigh_sp_in_phydist])
+  
+  #
+  null_dat_sub <- null.phy(tr_sub, 999, focal_sp_label, neigh_sp_label)
+  
+  apd_100[i] <- 
+    (avepd_100[i] - mean(null_dat_sub$avepd_null)) / sd(null_dat_sub$avepd_null)
+  
+  ntpd_100[i] <- 
+    (minpd_100[i] - mean(null_dat_sub$minpd_null)) / sd(null_dat_sub$minpd_null)
+  
+}
+
+
+
 pd_ind_all <- data.frame(
   totpd_20, avepd_20, minpd_20, apd_20, ntpd_20,
   totpd_10, avepd_10, minpd_10, apd_10, ntpd_10,
-  totpd_50, avepd_50, minpd_50, apd_50, ntpd_50
+  totpd_50, avepd_50, minpd_50, apd_50, ntpd_50,
+  totpd_100, avepd_100, minpd_100, apd_100, ntpd_100
 )
 
-rm(focal_sp, focal_sp_in_phydist, focal_sp_in_phydist, null_dat_sub, phy_dist, tr_sub, apd_10, apd_20, apd_50,
-   focal_sp_label,i, minpd_10, minpd_20, minpd_50, neigh_sp_in_phydist, neigh_sp_label, ntpd_10, ntpd_20, ntpd_50,
-   totpd_10, totpd_20, totpd_50,avepd_10, avepd_20, avepd_50)
+rm(focal_sp, focal_sp_in_phydist, focal_sp_in_phydist, null_dat_sub, phy_dist, tr_sub, apd_10, apd_20, apd_50,apd_100,
+   focal_sp_label,i, minpd_10, minpd_20, minpd_50, minpd_100, neigh_sp_in_phydist, neigh_sp_label, ntpd_10, ntpd_20, ntpd_50, ntpd_100,
+   totpd_10, totpd_20, totpd_50, totpd_100, avepd_10, avepd_20, avepd_50, avepd_100)

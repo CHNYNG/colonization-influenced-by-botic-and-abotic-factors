@@ -147,14 +147,14 @@ rm(species_counts,hsd_vegan,hsd_sub,i,invsimpson_div_10,
    hsd_vegan_beita_10)
 
 #####
-#算一下10m的距离
+#算一下50m的距离
 unique_species <- gsub(" ", "_",unique_species)
 hsd_vegan_alpha_50 <- data.frame(scientific.name = unique_species)
 
 #一共有unique_species294个，把它们作为第一列
 for (i in 1:dim(sp_loc)[1]) {
   
-  # 20m circle
+  # 50m circle
   hsd_sub <- hsd_alive_singlebr %>% 
     filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 50)
   
@@ -215,4 +215,75 @@ sp_loc <- sp_loc %>%
 rm(species_counts,hsd_vegan,hsd_sub,i,invsimpson_div_50,
    shannon_div_50,simpson_div_50,hsd_vegan_alpha_50,
    hsd_vegan_beita_50)
+
+
+#####
+#算一下100m的距离
+unique_species <- gsub(" ", "_",unique_species)
+hsd_vegan_alpha_100 <- data.frame(scientific.name = unique_species)
+
+#一共有unique_species294个，把它们作为第一列
+for (i in 1:dim(sp_loc)[1]) {
+  
+  # 100m circle
+  hsd_sub <- hsd_alive_singlebr %>% 
+    filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 100)
+  
+  species_counts <- table(hsd_sub$scientific.name) %>%
+    as.data.frame() %>%
+    rename(scientific.name = Var1, Freq = Freq)
+  
+  hsd_vegan <- data.frame(scientific.name = unique_species)
+  
+  hsd_vegan <- hsd_vegan %>%
+    left_join(.,species_counts, by = "scientific.name") %>%
+    mutate(Freq = ifelse(is.na(Freq), 0, Freq)) 
+  
+  hsd_vegan_alpha_100[,i+1] <- hsd_vegan$Freq
+  
+}
+#整理一下下
+library(tidyr)
+rownames(hsd_vegan_alpha_100) <- hsd_vegan_alpha_100$scientific.name
+hsd_vegan_alpha_100 <- hsd_vegan_alpha_100[,-1]
+colnames(hsd_vegan_alpha_100) <- sp_loc$TagNew
+hsd_vegan_alpha_100 <- t(hsd_vegan_alpha_100)
+
+library(vegan)
+#shannon
+shannon_div_100 <- diversity(hsd_vegan_alpha_100, index = "shannon")
+shannon_div_100 <- as.data.frame(shannon_div_100)
+#皮尔逊多样性指数（Pielou's Evenness Index）
+invsimpson_div_100 <- diversity(hsd_vegan_alpha_100, index = "invsimpson")
+invsimpson_div_100 <- as.data.frame(invsimpson_div_100)
+#辛普森多样性指数（Simpson Diversity Index）
+simpson_div_100 <- diversity(hsd_vegan_alpha_100, index = "simpson")
+simpson_div_100 <- as.data.frame(simpson_div_100)
+######整理数据为β多样性矩阵(需要的话)
+hsd_vegan_beita_100 <- ifelse(hsd_vegan_alpha_100 >= 1, 1, 0)
+#计算β多样性指数
+# 计算 Jaccard 相似性指数作为β多样性的距离
+#beta_div_jaccard_100 <- vegdist(hsd_vegan_alpha_100, method = "jaccard")
+
+# 计算 Bray-Curtis 相似性指数作为β多样性的距离
+#beta_div_bray_100 <- vegdist(hsd_vegan_alpha_100, method = "bray")
+
+# 计算 Sørensen-Dice 相似性指数作为β多样性的距离
+#beta_div_sorensen_100 <- vegdist(hsd_vegan_alpha_100, method = "kulczynski")
+
+# 计算 Euclidean 距离作为β多样性的距离
+#beta_div_euclidean_100 <- vegdist(hsd_vegan_alpha_100, method = "euclidean")
+
+#####
+#整理一下
+sp_loc <- sp_loc %>% 
+  mutate(
+    shannon_div_100 = shannon_div_100$shannon_div_100,
+    invsimpson_div_100 = invsimpson_div_100$invsimpson_div_100,
+    simpson_div_100 = simpson_div_100$simpson_div_100)
+
+#删掉一些无用的变量
+rm(species_counts,hsd_vegan,hsd_sub,i,invsimpson_div_100,
+   shannon_div_100,simpson_div_100,hsd_vegan_alpha_100,
+   hsd_vegan_beita_100)
 

@@ -31,7 +31,12 @@ library(dplyr)
 HSD_data <- left_join(HSD_data,specieslist,
                       by = "Latin")
 # 删除Family列中值为NA的行
-HSD_data <- HSD_data[!is.na(HSD_data$Family), ]
+#不能删掉这个，这样会减少物种
+#已经核对出减少了
+#水杨梅、香桂、菴耳柯、檵木、钩藤、细轴荛花
+#往前回溯一下specieslist
+#specieslist里都有
+#HSD_data <- HSD_data[!is.na(HSD_data$Family), ]
 
 alive_status <- c("Alive", "P", "lean", "alive", "snag")
 hsd_alive <- HSD_data %>%
@@ -84,6 +89,11 @@ hsd_alive_singlebr <- hsd_alive_singlebr %>%
 
 ##一个看不懂的循环
 # loops ----
+
+pd100_unweigh <- c();
+mpd100_unweigh <- c(); mpd100_weigh <- c()
+mntd100_unweigh <- c(); mntd100_weigh <- c()
+
 pd50_unweigh <- c();
 mpd50_unweigh <- c(); mpd50_weigh <- c()
 mntd50_unweigh <- c(); mntd50_weigh <- c()
@@ -98,8 +108,48 @@ mntd10_unweigh <- c(); mntd10_weigh <- c()
 
 for (i in 1:dim(sp_loc)[1]) {
   
+  #100m circle
+  
+  hsd_s <- hsd_alive_singlebr %>%
+    filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 100)
+                
+   # phylo tree with species in 100m circle
+   tr_s <- hsd_phytr %>%
+     drop.tip(setdiff(hsd_phytr$tip.label, unique(hsd_s$scientific.name)))
+                
+   # abundance-un-weighted phylo 
+   # pd
+   pd100_unweigh[i] <- sum(tr_s$edge.length)
+   
+   # mpd
+   tr_s_dis <- cophenetic(tr_s)
+   tr_s_dis <- tr_s_dis[lower.tri(tr_s_dis, diag = FALSE)]
+   mpd100_unweigh[i] <- mean(tr_s_dis)
+   
+   # mntd
+   tr_s_dis2 <- cophenetic(tr_s)
+   diag(tr_s_dis2) <- NA
+   mntd100_unweigh[i] <- mean(apply(tr_s_dis2, 2, min, na.rm = TRUE))
+   
+   # abundance-weighted phylo
+   hsd_s_weigh <- hsd_s %>% 
+     filter(scientific.name %in% tr_s$tip.label)
+   
+   tr_s_community <-
+     matrix(table(hsd_s_weigh$scientific.name), 
+            nrow = 1, 
+            dimnames = list("s1", names(table(hsd_s_weigh$scientific.name))))
+   
+   # mpd
+   mpd100_weigh[i] <- picante::mpd(tr_s_community, cophenetic(tr_s),
+                                  abundance.weighted = TRUE)
+   # mntd
+   mntd100_weigh[i] <- picante::mntd(tr_s_community, cophenetic(tr_s),
+                                    abundance.weighted = TRUE)
+   
+   
   # 50m circle
-  hsd_sub <- hsd_alive_singlebr %>% 
+  hsd_sub <- hsd_s %>% 
     filter(sqrt((GX - sp_loc$GX[i])^2 + (GY - sp_loc$GY[i])^2) <= 50)
   
   # phylo tree with species in 50m circle
@@ -217,6 +267,11 @@ for (i in 1:dim(sp_loc)[1]) {
 # data frame ----
 sp_loc <- sp_loc %>% 
   mutate(
+    pd100_unweigh = pd100_unweigh,
+    mpd100_unweigh = mpd100_unweigh,
+    mpd100_weigh = mpd100_weigh,
+    mntd100_unweigh = mntd100_unweigh,
+    mntd100_weigh = mntd100_weigh,
     pd50_unweigh = pd50_unweigh,
     mpd50_unweigh = mpd50_unweigh,
     mpd50_weigh = mpd50_weigh,
@@ -235,10 +290,11 @@ sp_loc <- sp_loc %>%
   )
 
 ######
-#之后把10/50的也跑出来
-#####
 #删掉一些中间变量
-rm(hsd_sub,hsd_sub_weigh,
+#####
+
+rm(hsd_s,hsd_s_weigh,tr_s, tr_s_dis,tr_s_dis2,tr_s_community,
+  hsd_sub,hsd_sub_weigh,
    tr_sub,tr_sub_community,tr_sub_dis2,i,
    mntd50_unweigh,mntd50_weigh,mpd50_unweigh,
    mpd50_weigh,pd50_unweigh,tr_sub_dis,
