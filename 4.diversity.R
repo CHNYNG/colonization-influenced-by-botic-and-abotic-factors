@@ -17,6 +17,7 @@
 unique_species <- gsub(" ", "_",specieslist$Latin)
 hsd_vegan_alpha_20 <- data.frame(scientific.name = unique_species)
 
+
 #一共有unique_species294个，把它们作为第一列
 for (i in 1:dim(sp_loc)[1]) {
   

@@ -20,6 +20,15 @@ sp_loc <- data.frame(
   TagNew = filtered_root_qrl$TagNew
 )
 sp_loc <- distinct(sp_loc, TagNew, .keep_all = TRUE)
+
+##画系统发育树
+#library(V.PhyloMaker)
+#colnames(specieslist) <- c("species", "Genus", "Family", "Family_number", "Order", "Group")
+#hsd_phy <- phylo.maker(sp.list = specieslist)
+#hsd_phytr <- hsd_phy$scenario.3
+#保存系统发育树
+#write.tree(hsd_phytr, "data/hsd_tree_vphylo.rwk")
+colnames(specieslist) <- c("Latin", "Genus", "Family", "Family_number", "Order", "Group")
 ##导入系统发育树
 hsd_phytr <- read.tree("data/hsd_tree_vphylo.rwk")
 
@@ -72,14 +81,15 @@ hsd_alive_singlebr <- hsd_alive %>%
 
 
 # 将TagNew列的值尝试转换为数值
-hsd_alive_singlebr <- hsd_alive_singlebr %>%
-  mutate(TagNew = as.numeric(TagNew))
+hsd_alive_singlebr$TagNew <- as.numeric(hsd_alive_singlebr$TagNew)
+
 
 # 过滤掉NA值和为0的值
 hsd_alive_singlebr <- hsd_alive_singlebr %>%
   filter(!is.na(TagNew)) %>%
   filter(TagNew != 0) %>%
-  filter(floor(TagNew) == TagNew)
+  filter(floor(TagNew) == TagNew)%>%
+  distinct(TagNew,.keep_all = TRUE)
 
 hsd_alive_singlebr$TagNew <- as.character(hsd_alive_singlebr$TagNew)
 

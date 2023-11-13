@@ -185,19 +185,20 @@ root_qrl <- root_qrl %>%
 #这几个包服务器都加载不了，所以用电脑把数据抠出来，在存进来导入
 #install_github("helixcn/plantlist", build_vignettes = TRUE)
 #加载plantlist包
-#library(plantlist)
+library(plantlist)
 #先筛选出所有的物种
 # 获取不重复的拉丁名称列
-#unique_species <- unique(HSD_data$Latin)
+unique_species <- unique(HSD_data$Latin)
 
-#specieslist <- TPL(unique_species)
-#colnames(specieslist) <- c("Latin","Genus","Family","Family_number","Order","Group")
+specieslist <- TPL(unique_species)
+colnames(specieslist) <- c("Latin","Genus","Family","Family_number","Order","Group")
+
 #把正名后的物种加入到大数据里
 
 #读进来物种数据
 #这个unique_species之后还会用到
-unique_species <- unique(HSD_data$Latin)
-load(file =  "data/specieslist.RData")
+#unique_species <- unique(HSD_data$Latin)
+#load(file =  "data/specieslist.RData")
 root_qrl <- left_join(root_qrl,specieslist[,c("Latin","Genus","Family","Order")],
                       by = "Latin")
 ###

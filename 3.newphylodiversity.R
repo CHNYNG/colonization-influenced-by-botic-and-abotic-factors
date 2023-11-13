@@ -2,20 +2,27 @@
 # this time we will compute:
 
 # totpd: the sum of the phylogenetic distances between a focal tree and its heterospecific neighbors.
-
+# totpd:focal与其异种邻近树之间的系统发育距离的总和
 # avepd: the average of the phylogenetic distances between a focal tree and its heterospecific neighbors.
+# avepd: focal与其异种邻近树之间系统发育距离的平均值。
+# min同理
 
 # apd: the deviation of observed average phylogenetic
+# 观察到的平均系统发育的偏差
 ## distance between a focal tree and its heterospecific
+## 也就是focal与其异种树之间的距离
 ## neighbors from that expected under a null model
+## 在零模型下的期望值
 
 # ntpd: the equivalent deviation of observed phylogenetic distance
+# 观察到的系统发育距离的等效偏差
 # between a focal seedling and its most closely
+# 在一个focal和它最密切的之间异种邻居
 # related heterospecific neighbor
-library(picante)
-hsd_phytr <- read.tree("data/hsd_tree_vphylo.rwk")
 
+library(picante)
 library(dplyr)
+
 focal_sp<- sp_loc %>%
   left_join(., hsd_alive_singlebr, "TagNew") %>%
   select(GX.x, GY.x, scientific.name) %>%
@@ -256,6 +263,6 @@ pd_ind_all <- data.frame(
   totpd_100, avepd_100, minpd_100, apd_100, ntpd_100
 )
 
-rm(focal_sp, focal_sp_in_phydist, focal_sp_in_phydist, null_dat_sub, phy_dist, tr_sub, apd_10, apd_20, apd_50,apd_100,
+rm(focal_sp, focal_sp_in_phydist, null_dat_sub, phy_dist, tr_sub, apd_10, apd_20, apd_50,apd_100,
    focal_sp_label,i, minpd_10, minpd_20, minpd_50, minpd_100, neigh_sp_in_phydist, neigh_sp_label, ntpd_10, ntpd_20, ntpd_50, ntpd_100,
    totpd_10, totpd_20, totpd_50, totpd_100, avepd_10, avepd_20, avepd_50, avepd_100)
