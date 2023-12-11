@@ -168,7 +168,9 @@ reg <- reg %>%
 #####
 #将数据进行scale
 #####
-
+#####
+#这部分scale的方法是把其改成0-1，但ntpd需要保留正负，所以重新scale一次，使用z-scale
+#也就是将其直接转化为其标准正态分布（均值为0，标准差为1）
 scale_to_01 <- function(x) {
   # 使用na.rm参数忽略NA值
 (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
@@ -187,7 +189,7 @@ scale_data <- reg %>%
          totpd_10, avepd_10, minpd_10, apd_10, ntpd_10, 
          totpd_50, avepd_50, minpd_50, apd_50, ntpd_50, 
          totpd_100, avepd_100, minpd_100, apd_100, ntpd_100, 
-         shannon_div_20, invsimpson_div_20, simpson_div_20,
+       shannon_div_20, invsimpson_div_20, simpson_div_20,
          shannon_div_10, invsimpson_div_10, simpson_div_10,
          shannon_div_50, invsimpson_div_50, simpson_div_50,
          shannon_div_100, invsimpson_div_100, simpson_div_100,
@@ -198,6 +200,8 @@ scale_data <- reg %>%
 
 scale_data <- as.matrix(scale_data)
 scale_data <- apply(scale_data,2,scale_to_01)
+#scale_data <- apply(scale_data, 2, scale)
+#scale_data <- apply(scale_data, 2, function(x) scale(x, center = TRUE, scale = max(abs(x)) / 1))
 scale_data <- as.data.frame(scale_data)
 
 reg_sc <- reg %>%

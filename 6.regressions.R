@@ -13,11 +13,14 @@ library(glmmTMB)
 #RDi + totpd_10 + moisture + avepd_10 + mntd10_unweigh + elevation + shannon_div_10 + SRL + mpd10_weigh + mntd10_weigh
 #avepd_10 + totpd_10 + RRi + moisture + elevation + shannon_div_10 + mntd10_unweigh + REi + pd10_unweigh + mntd10_weigh
 #从逻辑顺序上来添加变量
-###使用ntpd apd
-glm_10 <- glmmTMB(am ~ ntpd_10 + apd_10 + SRA + AD + DBH2 + CBD_10 + HBD_10 + simpson_div_10 + RDi, reg_sc, family = beta_family)
-summary(glm_10)
+###使用ntpd + apd
+#totpd_10 + avepd_10 + minpd_10
+#pd10_unweigh + mpd10_unweigh + mntd10_unweigh
+#mpd10_weigh + mntd10_weigh
+glm_20 <- glmmTMB(am ~ minpd_20 + SRA + DBH2 + CBD_20 + shannon_div_20 * RDi, reg_sc, family = beta_family)
+summary(glm_20)
 
-coef_data <- summary(glm_10)$coefficients$cond
+coef_data <- summary(glm_20)$coefficients$cond
 coef_data <- as.data.frame(coef_data)
 
 
@@ -43,7 +46,7 @@ coef_data$upper <- coef_data$Estimate + coef_data$Std_Error / 2
 coef_data$label_x <- coef_data$upper + 0.05  # 调整标记位置的 x 坐标
 
 # 按 Pr_value 的大小对 Variable 进行排序
-coef_data <- coef_data[order(coef_data$Pr_value), ]
+coef_data$Variable <- factor(coef_data$Variable, levels = c("(Intercept)", "minpd_20", "SRA", "DBH2", "CBD_20", "shannon_div_20", "RDi", "shannon_div_20:RDi"))
 
 # 绘制线段图和标记
 ggplot(coef_data, aes(x = Estimate, y = reorder(Variable, -Pr_value))) +
@@ -54,8 +57,8 @@ ggplot(coef_data, aes(x = Estimate, y = reorder(Variable, -Pr_value))) +
        x = "Estimate",
        y = "Variable") +
   theme_minimal() +
-  theme(text = element_text(size = 15)) + #调整所有文字的大小
-  coord_cartesian(xlim = c(-2, 2))  # 调整 x 轴坐标范围
+  theme(text = element_text(size = 15))# + #调整所有文字的大小
+#  coord_cartesian(xlim = c(-2, 2))  # 调整 x 轴坐标范围
 
 
 glm <- glmmTMB(am ~ avepd_10 + totpd_10 + RRi + moisture + elevation + shannon_div_10 + mntd10_unweigh + REi + pd10_unweigh + mntd10_weigh + (1| sptype2), reg_sc, family = beta_family)
