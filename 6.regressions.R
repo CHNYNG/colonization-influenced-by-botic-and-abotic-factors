@@ -17,7 +17,8 @@ library(glmmTMB)
 #totpd_10 + avepd_10 + minpd_10
 #pd10_unweigh + mpd10_unweigh + mntd10_unweigh
 #mpd10_weigh + mntd10_weigh
-glm_10 <- glmmTMB(am ~ minpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi, reg_sc, family = beta_family)
+#minpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi
+glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi, reg_sc, family = beta_family)
 summary(glm_10)
 
 #画图
@@ -48,13 +49,13 @@ coef_data$upper <- coef_data$Estimate + coef_data$Std_Error / 2
 coef_data$label_x <- coef_data$upper + 0.05  # 调整标记位置的 x 坐标
 
 # 对 Variable 进行排序
-desired_order <- c( "shannon_div_10:RDi", "RDi", "shannon_div_10", "CBD_10", "DBH2", "SRA", "minpd_10", "(Intercept)")
+desired_order <- c( "shannon_div_10:RDi", "RDi", "shannon_div_10", "CBD_10", "DBH2", "SRA", "avepd_10", "totpd_10", "minpd_10", "(Intercept)")
 coef_data$Variable <- factor(coef_data$Variable, levels = desired_order)
 
 # 绘制线段图和标记
 ggplot(coef_data, aes(x = Estimate, y = Variable)) +
-  geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.1, linewidth = 0.8) + #调整线段粗细
-  geom_text(aes(x = label_x, label = Significance), color = "black", hjust =0, vjust = -0.5, size = 6) + # 调整文字标记的大小
+  geom_errorbarh(aes(xmin = lower, xmax = upper), color = "#bcbddc", height = 0.2, linewidth = 2) + #调整线段粗细
+  geom_text(aes(x = label_x, label = Significance), color = "#756bb1", hjust =0, vjust = -0.5, size = 6) + # 调整文字标记的大小
   geom_vline(xintercept = 0, linetype = "dashed", color = "black") +  # 添加 Estimate=0 的虚线
   labs(title = "Estimates with Significance Levels",
        x = "Estimate",
@@ -98,7 +99,7 @@ summary(glm_10_P_5)
 #20#####
 
 #apd_20 + minpd_20 +  ap + soc + tp + pd20_unweigh + moisture + mntd20_unweigh
-glm_20 <- glmmTMB(am ~ minpd_20 + SRA + DBH2 + CBD_20 + shannon_div_20 * RDi, reg_sc, family = beta_family)
+glm_20 <- glmmTMB(am ~ minpd_20 + avepd_20 + totpd_20 + SRA + DBH2 + CBD_20 + shannon_div_20 * RDi, reg_sc, family = beta_family)
 summary(glm_20)
 
 #画图
@@ -129,13 +130,13 @@ coef_data$upper <- coef_data$Estimate + coef_data$Std_Error / 2
 coef_data$label_x <- coef_data$upper + 0.05  # 调整标记位置的 x 坐标
 
 # 对 Variable 进行排序
-desired_order <- c( "shannon_div_20:RDi", "RDi", "shannon_div_20", "CBD_20", "DBH2", "SRA", "minpd_20", "(Intercept)")
+desired_order <- c( "shannon_div_20:RDi", "RDi", "shannon_div_20", "CBD_20", "DBH2", "SRA", "avepd_20", "totpd_20", "minpd_20", "(Intercept)")
 coef_data$Variable <- factor(coef_data$Variable, levels = desired_order)
 
 # 绘制线段图和标记
 ggplot(coef_data, aes(x = Estimate, y = Variable)) +
   geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.1, linewidth = 0.8) + #调整线段粗细
-  geom_text(aes(x = label_x, label = Significance), color = "black", hjust =0, vjust = -0.5, size = 6) + # 调整文字标记的大小
+  geom_text(aes(x = label_x, label = Significance), color = "blue", hjust =0, vjust = -0.5, size = 6) + # 调整文字标记的大小
   geom_vline(xintercept = 0, linetype = "dashed", color = "black") +  # 添加 Estimate=0 的虚线
   labs(title = "Estimates with Significance Levels",
        x = "Estimate",
@@ -173,7 +174,7 @@ summary(glm_20_P_4b)
 #####
 #50#####
 #apd_50 + CBD_50 + ap + AD + minpd_50 + tp + aspect
-glm_50 <- glmmTMB(am ~ minpd_50 + SRA + DBH2 + CBD_50 + shannon_div_50 * RDi, reg_sc, family = beta_family)
+glm_50 <- glmmTMB(am ~ minpd_50 + avepd_50 + totpd_50 + SRA + DBH2 + CBD_50 + shannon_div_50 * RDi, reg_sc, family = beta_family)
 summary(glm_50)
 
 #画图
@@ -204,13 +205,13 @@ coef_data$upper <- coef_data$Estimate + coef_data$Std_Error / 2
 coef_data$label_x <- coef_data$upper + 0.05  # 调整标记位置的 x 坐标
 
 # 对 Variable 进行排序
-desired_order <- c( "shannon_div_50:RDi", "RDi", "shannon_div_50", "CBD_50", "DBH2", "SRA", "minpd_50", "(Intercept)")
+desired_order <- c( "shannon_div_50:RDi", "RDi", "shannon_div_50", "CBD_50", "DBH2", "SRA", "avepd_50", "totpd_50", "minpd_50", "(Intercept)")
 coef_data$Variable <- factor(coef_data$Variable, levels = desired_order)
 
 # 绘制线段图和标记
 ggplot(coef_data, aes(x = Estimate, y = Variable)) +
   geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.1, linewidth = 0.8) + #调整线段粗细
-  geom_text(aes(x = label_x, label = Significance), color = "black", hjust =0, vjust = -0.5, size = 6) + # 调整文字标记的大小
+  geom_text(aes(x = label_x, label = Significance), color = "blue", hjust =0, vjust = -0.5, size = 6) + # 调整文字标记的大小
   geom_vline(xintercept = 0, linetype = "dashed", color = "black") +  # 添加 Estimate=0 的虚线
   labs(title = "Estimates with Significance Levels",
        x = "Estimate",
@@ -253,7 +254,7 @@ summary(glm_50_P_4b)
 #100#####
 #CBD_100 + avepd_100 + AD + ap + tn + tp + totpd_100 + ntpd_100
 
-glm_100 <- glmmTMB(am ~ minpd_100 + SRA + DBH2 + CBD_100 + shannon_div_100 * RDi, reg_sc, family = beta_family)
+glm_100 <- glmmTMB(am ~ minpd_100 + avepd_100 + totpd_100 + SRA + DBH2 + CBD_100 + shannon_div_100 * RDi, reg_sc, family = beta_family)
 summary(glm_100)
 
 #画图
@@ -284,13 +285,13 @@ coef_data$upper <- coef_data$Estimate + coef_data$Std_Error / 2
 coef_data$label_x <- coef_data$upper + 0.05  # 调整标记位置的 x 坐标
 
 # 对 Variable 进行排序
-desired_order <- c( "shannon_div_100:RDi", "RDi", "shannon_div_100", "CBD_100", "DBH2", "SRA", "minpd_100", "(Intercept)")
+desired_order <- c( "shannon_div_100:RDi", "RDi", "shannon_div_100", "CBD_100", "DBH2", "SRA", "avepd_100", "totpd_100", "minpd_100", "(Intercept)")
 coef_data$Variable <- factor(coef_data$Variable, levels = desired_order)
 
 # 绘制线段图和标记
 ggplot(coef_data, aes(x = Estimate, y = Variable)) +
   geom_errorbarh(aes(xmin = lower, xmax = upper), height = 0.1, linewidth = 0.8) + #调整线段粗细
-  geom_text(aes(x = label_x, label = Significance), color = "black", hjust =0, vjust = -0.5, size = 6) + # 调整文字标记的大小
+  geom_text(aes(x = label_x, label = Significance), color = "blue", hjust =0, vjust = -0.5, size = 6) + # 调整文字标记的大小
   geom_vline(xintercept = 0, linetype = "dashed", color = "black") +  # 添加 Estimate=0 的虚线
   labs(title = "Estimates with Significance Levels",
        x = "Estimate",

@@ -239,7 +239,11 @@ save(reg, file = "data/data_for_reg.RData")
 library(dplyr)
 # 选择数值型变量列
 numeric_vars <- reg_sc %>%
-  select(am,
+  select(minpd_10 , avepd_10 , totpd_10 , SRA , DBH2 , CBD_10 , shannon_div_10 , RDi)
+    
+    
+    
+    am,
          DBH2, rel_dbh_multi, RDi,
          RRi, REi,
          AD, SRL, SRA,
@@ -282,20 +286,43 @@ ggsave("pic/colinear_plot.pdf", p, width = 48, height = 24)
 # 创建相关性图
 p <- ggplot(cor_data, aes(Var1, Var2, fill = value)) +
   geom_tile() +
-  scale_fill_gradient2(low = "#f7fcb9", mid = "#cbc9e2", high = "#f7fcb9", midpoint = 0) +
+  scale_fill_gradient2(low = "#deebf7", mid = "#9ecae1", high = "#3182bd", midpoint = 0) +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(axis.text.x = element_text(angle = 28, hjust = 1)) +
   labs(title = "Correlation Plot ") +
   # 添加相关系数标签
   # geom_text(aes(label = round(value, 2)), vjust = 1, size = 3, color = "black")+
   
   geom_text(aes(label = round(cor_data$value, 2)), 
-            vjust = 1, size = 3, color = ifelse(abs(cor_data$value) >= 0.7, "red", "black"), show.legend = FALSE) +
+            vjust = 1, size = 3, color = "white", show.legend = FALSE) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  # 调整横坐标字体大小
         axis.text.y = element_text(size = 12),  # 调整纵坐标字体大小
         axis.title.x = element_blank(),  # 去掉横坐标标题
-        axis.title.y = element_blank())  # 去掉纵坐标标题
+        axis.title.y = element_blank(),
+        legend.position = "none")  + # 去掉纵坐标标题
+  theme(plot.title = element_text(size = 16, face = "bold"))
 print(p)
+
+p <- ggplot(cor_data, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "#deebf7", mid = "#9ecae1", high = "#3182bd", midpoint = 0) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 12), 
+        axis.text.y = element_text(size = 12),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(family = "Arial", size = 12, color = "black"),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        legend.position = "none") +
+  labs(title = "Correlation Plot", x = "", y = "") +
+  geom_text(aes(label = round(cor_data$value, 2)), 
+            vjust = 1, size = 3, color = "white", show.legend = FALSE) +
+  theme(plot.title = element_text(size = 16, face = "bold"))
+
+print(p)
+
 
 ggsave("pic/correlation_plot.pdf", p, width = 48, height = 24)
 
