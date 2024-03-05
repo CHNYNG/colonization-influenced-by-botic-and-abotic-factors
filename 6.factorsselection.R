@@ -240,9 +240,7 @@ library(dplyr)
 # 选择数值型变量列
 numeric_vars <- reg_sc %>%
   select(minpd_10 , avepd_10 , totpd_10 , SRA , DBH2 , CBD_10 , shannon_div_10 , RDi)
-    
-    
-    
+   
     am,
          DBH2, rel_dbh_multi, RDi,
          RRi, REi,
