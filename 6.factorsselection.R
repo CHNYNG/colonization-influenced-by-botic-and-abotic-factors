@@ -137,8 +137,16 @@ hsd_alive_singlebr_dbh <- hsd_alive_singlebr_dbh %>%
   ungroup() %>%
   select(-total_count, -seedling_cutoff, -dbh_multi_rank, -Latin)
 
+hsd_alive_singlebr_dbh <- hsd_alive_singlebr_dbh %>%
+  arrange(DBH2) %>%
+  mutate(history2 = case_when(
+    row_number() <= nrow(hsd_alive_singlebr_dbh) * 0.5 ~ "seedling",
+    row_number() <= nrow(hsd_alive_singlebr_dbh) * 0.75 ~ "saplings",
+    TRUE ~ "adult"
+  ))
+
 reg <- reg %>%
-  left_join(hsd_alive_singlebr_dbh %>% select(TagNew, history), by = "TagNew")%>%
+  left_join(hsd_alive_singlebr_dbh %>% select(TagNew, history, history2), by = "TagNew")%>%
   distinct()
 
 #####
@@ -189,7 +197,7 @@ scale_data <- reg %>%
          totpd_10, avepd_10, minpd_10, apd_10, ntpd_10, 
          totpd_50, avepd_50, minpd_50, apd_50, ntpd_50, 
          totpd_100, avepd_100, minpd_100, apd_100, ntpd_100, 
-       shannon_div_20, invsimpson_div_20, simpson_div_20,
+         shannon_div_20, invsimpson_div_20, simpson_div_20,
          shannon_div_10, invsimpson_div_10, simpson_div_10,
          shannon_div_50, invsimpson_div_50, simpson_div_50,
          shannon_div_100, invsimpson_div_100, simpson_div_100,

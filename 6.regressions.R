@@ -18,10 +18,28 @@ library(glmmTMB)
 #pd10_unweigh + mpd10_unweigh + mntd10_unweigh
 #mpd10_weigh + mntd10_weigh
 #minpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi
-glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi, reg_sc, family = beta_family)
+glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi,
+                  reg_sc, family = beta_family)
 summary(glm_10)
+#啊啊啊啊，检验之后不行哇！！！！完全不行哇！！！
+glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi,
+                  reg_sc, family = ordbeta)
+summary(glm_10)
+library(DHARMa)
+glm_10_simres <- simulateResiduals(glm_10)
+plot(glm_10_simres)
+library(car)
+Anova(glm_10) ## default type II
+Anova(glm_10,type="III")
+library(effects)
+ae <- allEffects(glm_10)
+plot(ae)
+glm_10_sr <- glmmTMB(am ~ shannon_div_10 * RDi,
+                     reg_sc, family = ordbeta)
 
+plot(allEffects(glm_10_sr))
 #画图
+
 library(ggplot2)
 coef_data <- summary(glm_10)$coefficients$cond
 coef_data <- as.data.frame(coef_data)
