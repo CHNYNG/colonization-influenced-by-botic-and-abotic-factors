@@ -237,7 +237,7 @@ reg_sc <- reg %>%
 
 rm(scale_data)
 
-save(reg, file = "data/data_for_reg.RData")
+save(reg,reg_sc, file = "data/data_for_reg.RData")
 
 #####
 #选择回归用的变量
