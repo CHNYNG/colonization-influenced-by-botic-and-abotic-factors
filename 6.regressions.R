@@ -18,11 +18,11 @@ library(glmmTMB)
 #pd10_unweigh + mpd10_unweigh + mntd10_unweigh
 #mpd10_weigh + mntd10_weigh
 #minpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi
-glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi,
+glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10* RDi,
                   reg_sc, family = beta_family)
 summary(glm_10)
 #啊啊啊啊，检验之后不行哇！！！！完全不行哇！！！
-glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi,
+glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 * RDi +(1|Family),
                   reg_sc, family = ordbeta)
 summary(glm_10)
 library(DHARMa)
