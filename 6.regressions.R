@@ -19,12 +19,16 @@ library(glmmTMB)
 #mpd10_weigh + mntd10_weigh
 #minpd_10 + SRA + DBH2 + CBD_10 + shannon_div_10 * RDi
 glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10* RDi,
-                  reg_sc, family = beta_family)
+                  reg_scaled, family = beta_family)
 summary(glm_10)
+library(lme4)
+glm_10_glm <- glm(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 * RDi,
+          data = reg_scaled, family = gaussian)
+summary(glm_10_glm)
 #啊啊啊啊，检验之后不行哇！！！！完全不行哇！！！
-glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 * RDi +(1|Family),
-                  reg_sc, family = ordbeta)
-summary(glm_10)
+#glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 * RDi +(1|Family),
+ #                 reg_scaled, family = ordbeta)
+#summary(glm_10)
 library(DHARMa)
 glm_10_simres <- simulateResiduals(glm_10)
 plot(glm_10_simres)
@@ -41,7 +45,7 @@ plot(allEffects(glm_10_sr))
 #画图
 
 library(ggplot2)
-coef_data <- summary(glm_10)$coefficients$cond
+coef_data <- summary(glm_10_2)$coefficients$cond
 coef_data <- as.data.frame(coef_data)
 
 
@@ -67,7 +71,7 @@ coef_data$upper <- coef_data$Estimate + coef_data$Std_Error / 2
 coef_data$label_x <- coef_data$upper + 0.05  # 调整标记位置的 x 坐标
 
 # 对 Variable 进行排序
-desired_order <- c( "shannon_div_10:RDi", "RDi", "shannon_div_10", "CBD_10", "DBH2", "SRA", "avepd_10", "totpd_10", "minpd_10", "(Intercept)")
+desired_order <- c( "invsimpson_div_10:RDi", "RDi", "invsimpson_div_10", "CBD_10", "DBH2", "SRA", "avepd_10", "totpd_10", "minpd_10", "(Intercept)")
 coef_data$Variable <- factor(coef_data$Variable, levels = desired_order)
 
 # 绘制线段图和标记
@@ -79,7 +83,8 @@ ggplot(coef_data, aes(x = Estimate, y = Variable)) +
        x = "Estimate",
        y = "Variable") +
   theme_minimal() +
-  theme(text = element_text(size = 20))# + #调整所有文字的大小
+  theme(text = element_text(size = 20)) + #调整所有文字的大小
+  scale_y_discrete(labels = c( "IS:RDi", "RDi", "IS", "CBD", "DBH", "SRA", "avepd", "totpd", "minpd", "(Intercept)"))
 #  coord_cartesian(xlim = c(-2, 2))  # 调整 x 轴坐标范围
 
 

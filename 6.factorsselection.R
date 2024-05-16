@@ -185,8 +185,7 @@ scale_to_01 <- function(x) {
 }
 
 scale_data <- reg %>%
-  select(qr_AM, qr_BZ, qr_Pn, qr_Pq,qr_EM,
-         GX, GY,DBH1, DBH2, rel_dbh_multi, AD, SRL, SRA,
+  select(DBH1, DBH2, rel_dbh_multi, AD, SRL, SRA,
          soc, tn, tp, ap, ph, moisture,
          elevation, aspect, slope, convexity,
          pd100_unweigh, mpd100_unweigh, mpd100_weigh, mntd100_unweigh, mntd100_weigh,
@@ -207,14 +206,13 @@ scale_data <- reg %>%
          BD_100, CBD_100, HBD_100)
 
 scale_data <- as.matrix(scale_data)
-scale_data <- apply(scale_data,2,scale_to_01)
+scale_data <- apply(scale_data,2,scale)
 #scale_data <- apply(scale_data, 2, scale)
 #scale_data <- apply(scale_data, 2, function(x) scale(x, center = TRUE, scale = max(abs(x)) / 1))
 scale_data <- as.data.frame(scale_data)
 
-reg_sc <- reg %>%
-  select( -qr_AM, -qr_BZ, -qr_Pn, -qr_Pq, -qr_EM, 
-          -GX, -GY, -DBH1, -DBH2, -rel_dbh_multi, -AD, -SRL, -SRA,
+reg_scaled <- reg %>%
+  select( -DBH1, -DBH2, -rel_dbh_multi, -AD, -SRL, -SRA,
           -soc, -tn, -tp, -ap, -ph, -moisture, 
           -elevation, -aspect, -slope, -convexity,
           -pd100_unweigh, -mpd100_unweigh, -mpd100_weigh, -mntd100_unweigh, -mntd100_weigh,
