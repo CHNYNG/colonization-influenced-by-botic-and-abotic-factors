@@ -22,9 +22,21 @@ glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + in
                   reg_scaled, family = beta_family)
 summary(glm_10)
 library(lme4)
-glm_10_glm <- glm(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 * RDi,
+
+glm_10_glm <- glm(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 + RDi,
           data = reg_scaled, family = gaussian)
 summary(glm_10_glm)
+library(glmm.hp)
+plot(glmm.hp(glm_10_glm))
+library(piecewiseSEM)
+# 筛选出特定列并删除带有NA的行
+reg_sc_psem <- na.omit(reg_scaled[, c("am", "minpd_10", "avepd_10", "totpd_10", "SRA", "DBH2", "CBD_10", "invsimpson_div_10", "RDi")])
+modelList <- psem(
+  glm(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 + RDi, reg_sc_psem, family = gaussian),
+  lm(DBH2 ~ minpd_10 + avepd_10 +totpd_10 + RDi, reg_sc_psem),
+  lm(RDi ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10, reg_sc_psem)
+)
+summary(modelList)
 #啊啊啊啊，检验之后不行哇！！！！完全不行哇！！！
 #glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 * RDi +(1|Family),
  #                 reg_scaled, family = ordbeta)
