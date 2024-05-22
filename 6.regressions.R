@@ -97,9 +97,9 @@ summary(lm(am ~ Soil1, reg_sc_psem))
 coefs(lm(am ~ Soil1, reg_sc_psem))
 #####拟合复合变量间的多元回归模型
 modelList <- psem(
-  glm(am ~ Neighbor1 + Host1 + Soil1 , data = reg_sc_psem),
-  lm(Host1 ~ Neighbor1 + Soil1 ,data = reg_sc_psem),
-  lm(Neighbor1 ~ Soil1, data = reg_sc_psem)
+  glm(am ~ Neighbor1 + Host1 +  Soil1 , data = reg_sc_psem),
+  lm(Host1 ~  Soil1 ,data = reg_sc_psem),
+  lm(Neighbor1 ~ Soil1 , data = reg_sc_psem)
 )
 
 summary(modelList, .progressBar = FALSE)
