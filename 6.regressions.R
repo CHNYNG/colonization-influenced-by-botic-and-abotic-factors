@@ -23,20 +23,90 @@ glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + in
 summary(glm_10)
 library(lme4)
 
-glm_10_glm <- glm(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 + RDi,
+glm_10_glm <- glm(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + + invsimpson_div_10 + RDi + invsimpson_div_10 : RDi,
           data = reg_scaled, family = gaussian)
 summary(glm_10_glm)
 library(glmm.hp)
+hp_results <- glmm.hp(glm_10_glm) 
+partition_data <- hp_results$hierarchical.partitioning
+variable_names <- hp_results$variables
+library(ggplot2)
+
+ggplot(partition_data, aes(x = reorder(variable_names, -Individual), y = Individual)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "darkblue") +  # 更改填充色和边框色
+#  geom_text(aes(label = round(Individual, 2)), vjust = -0.3, color = "black", size = 3) +  # 添加柱形图上的数据标签
+  labs(title = "Individual Predictor Contribution to R-squared", 
+       x = "Predictor", y = "Proportion of Explained Variance") +
+  scale_x_discrete(labels = c("DBH", "minpd", "CBD", "RDi", "avepd", "SRA", "invsimpon:RDi", "invsimpson", "totpd")) +
+  theme_classic() +
+  theme(axis.text.x = element_text(size = 10, color = "black", angle = 45, hjust = 1)) +  # 调整横坐标标签的大小、颜色和角度
+  theme(axis.text.y = element_text(size = 10, color = "black")) +  # 调整纵坐标标签的大小和颜色
+  theme(plot.title = element_text(size = 14, hjust = 0.5)) +  # 调整标题的大小和位置
+  theme(plot.subtitle = element_text(size = 12, hjust = 0.5)) +  # 调整副标题的大小和位置
+  theme(legend.position = "none")  # 移除图例
+
 plot(glmm.hp(glm_10_glm))
+
 library(piecewiseSEM)
 # 筛选出特定列并删除带有NA的行
-reg_sc_psem <- na.omit(reg_scaled[, c("am", "minpd_10", "avepd_10", "totpd_10", "SRA", "DBH2", "CBD_10", "invsimpson_div_10", "RDi")])
+reg_sc_psem <- na.omit(reg_scaled[, c("am", "minpd_10", "avepd_10", "totpd_10", "SRA", "DBH2", "CBD_10", "invsimpson_div_10", "RDi", "soc", "tn", "tp","ap","ph","moisture")])
+
+####构建第一个复合变量Neighbor
+Neighbor <- lm(am ~ minpd_10 + avepd_10 + totpd_10 + CBD_10 + invsimpson_div_10, reg_sc_psem)
+summary(Neighbor)
+coefs(Neighbor, standardize = 'scale')
+beta_minpd_10 <- summary(Neighbor)$coefficients[2,1]
+beta_avepd_10 <- summary(Neighbor)$coefficients[3,1]
+beta_totpd_10 <- summary(Neighbor)$coefficients[4,1]
+beta_CBD_10 <- summary(Neighbor)$coefficients[5,1]
+beta_invsimpson_div_10 <- summary(Neighbor)$coefficients[6,1]
+Neighbor1 <- beta_minpd_10*reg_sc_psem$minpd_10 + beta_avepd_10*reg_sc_psem$avepd_10 +
+  beta_totpd_10*reg_sc_psem$totpd_10 +
+  beta_CBD_10*reg_sc_psem$CBD_10 + beta_invsimpson_div_10*reg_sc_psem$invsimpson_div_10
+reg_sc_psem$Neighbor1 <- Neighbor1
+summary(lm(am ~ Neighbor1, reg_sc_psem))
+coefs(lm(am ~ Neighbor1, reg_sc_psem))
+#####构建第二个复合变量Host
+Host <- lm(am ~ DBH2 + SRA, reg_sc_psem)
+summary(Host)
+coefs(Host, standardize = 'scale')
+beta_DBH2 <- summary(Host)$coefficients[2,1]
+beta_SRA <- summary(Host)$coefficients[3,1]
+Host1 <- beta_DBH2*reg_sc_psem$DBH2 + beta_SRA*reg_sc_psem$SRA
+reg_sc_psem$Host1 <- Host1
+summary(lm(am ~ Host1, reg_sc_psem))
+coefs(lm(am ~ Host1, reg_sc_psem))
+#####构建第三个复合变量Environment
+#先尝试一下只用RDi，之后再尝试使用土壤因子
+#用RDi好像不行，那就把各种元素都加进来试试
+#我有这些个元素"soc", "tn", "tp","ap","ph","moisture" 
+Soil <- lm(am ~ soc + tn + tp +ap + ph + moisture, reg_sc_psem)
+summary(Soil)
+coefs(Soil, standardize = 'scale')
+beta_soc <- summary(Soil)$coefficients[2,1]
+beta_tn <- summary(Soil)$coefficients[3,1]
+beta_tp <- summary(Soil)$coefficients[4,1]
+beta_ap <- summary(Soil)$coefficients[5,1]
+beta_ph <- summary(Soil)$coefficients[6,1]
+beta_moisture <- summary(Soil)$coefficients[7,1]
+Soil1 <- beta_soc*reg_sc_psem$soc + beta_tn*reg_sc_psem$tn +
+  beta_tp*reg_sc_psem$tp + beta_ap*reg_sc_psem$ap + beta_ph*reg_sc_psem$ph +
+  beta_moisture*reg_sc_psem$moisture
+reg_sc_psem$Soil1 <- Soil1
+summary(lm(am ~ Soil1, reg_sc_psem))
+coefs(lm(am ~ Soil1, reg_sc_psem))
+#####拟合复合变量间的多元回归模型
 modelList <- psem(
-  glm(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 + RDi, reg_sc_psem, family = gaussian),
-  lm(DBH2 ~ minpd_10 + avepd_10 +totpd_10 + RDi, reg_sc_psem),
-  lm(RDi ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10, reg_sc_psem)
+  glm(am ~ Neighbor1 + Host1 + Soil1 , data = reg_sc_psem),
+  lm(Host1 ~ Neighbor1 + Soil1 ,data = reg_sc_psem),
+  lm(Neighbor1 ~ Soil1, data = reg_sc_psem)
 )
-summary(modelList)
+
+summary(modelList, .progressBar = FALSE)
+pdf("pic/sem.pdf")
+plot(modelList)
+dev.off()
+
 #啊啊啊啊，检验之后不行哇！！！！完全不行哇！！！
 #glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 * RDi +(1|Family),
  #                 reg_scaled, family = ordbeta)
