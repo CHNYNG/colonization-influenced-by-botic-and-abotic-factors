@@ -23,11 +23,13 @@ glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + in
 summary(glm_10)
 library(lme4)
 
-glm_10_glm <- glm(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + + invsimpson_div_10 + RDi + invsimpson_div_10 : RDi,
-          data = reg_scaled, family = gaussian)
+glm_10_glm <- glm(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 + RDi + invsimpson_div_10 : RDi,
+          data = reg_sc_psem, family = quasi(link = "identity", variance = "constant"))
 summary(glm_10_glm)
 library(glmm.hp)
+plot(glmm.hp(glm_10_glm))
 hp_results <- glmm.hp(glm_10_glm) 
+plot(hp_results)
 partition_data <- hp_results$hierarchical.partitioning
 variable_names <- hp_results$variables
 library(ggplot2)
@@ -49,8 +51,18 @@ plot(glmm.hp(glm_10_glm))
 
 library(piecewiseSEM)
 # 筛选出特定列并删除带有NA的行
-reg_sc_psem <- na.omit(reg_scaled[, c("am", "minpd_10", "avepd_10", "totpd_10", "SRA", "DBH2", "CBD_10", "invsimpson_div_10", "RDi", "soc", "tn", "tp","ap","ph","moisture")])
 
+# 加载 dplyr 包
+library(dplyr)
+
+# 筛选出 am 列不为空值的行，并选择特定列
+reg_sc_psem <- reg_scaled %>%
+  filter(!is.na(am)) %>%
+  select(am, minpd_10, avepd_10, totpd_10, SRA, DBH2, CBD_10, invsimpson_div_10, RDi, soc, tn, tp, ap, ph, moisture,
+         Order, Family, Genus, Latin)
+
+library(piecewiseSEM)
+library(lme4)
 ####构建第一个复合变量Neighbor
 Neighbor <- lm(am ~ minpd_10 + avepd_10 + totpd_10 + CBD_10 + invsimpson_div_10, reg_sc_psem)
 summary(Neighbor)
@@ -97,9 +109,9 @@ summary(lm(am ~ Soil1, reg_sc_psem))
 coefs(lm(am ~ Soil1, reg_sc_psem))
 #####拟合复合变量间的多元回归模型
 modelList <- psem(
-  glm(am ~ Neighbor1 + Host1 +  Soil1 , data = reg_sc_psem),
-  lm(Host1 ~  Soil1 ,data = reg_sc_psem),
-  lm(Neighbor1 ~ Soil1 , data = reg_sc_psem)
+  glm(am ~ Neighbor1 + Host1 +  RDi , data = reg_sc_psem),
+ # lm(Host1 ~  Soil1 ,data = reg_sc_psem),
+  lm(Host1 ~ Neighbor1   , data = reg_sc_psem)
 )
 
 summary(modelList, .progressBar = FALSE)
@@ -107,10 +119,45 @@ pdf("pic/sem.pdf")
 plot(modelList)
 dev.off()
 
+#####直接再重新做一个psem
+##玩我…
+#把pd做一个复合函数
+PD1 <- lm(am ~ minpd_10 + avepd_10 + totpd_10 , reg_sc_psem)
+summary(PD1)
+coefs(Neighbor, standardize = 'scale')
+beta_minpd_10 <- summary(PD1)$coefficients[2,1]
+beta_avepd_10 <- summary(PD1)$coefficients[3,1]
+beta_totpd_10 <- summary(PD1)$coefficients[4,1]
+PD <- beta_minpd_10*reg_sc_psem$minpd_10 + beta_avepd_10*reg_sc_psem$avepd_10 +
+  beta_totpd_10*reg_sc_psem$totpd_10
+reg_sc_psem$PD <- PD
+summary(lm(am ~ PD, reg_sc_psem))
+coefs(lm(am ~ PD, reg_sc_psem))
+
+#其他的都分别来
+modelList <- psem(
+  glm(am ~ PD + CBD_10 + invsimpson_div_10 + DBH2 + SRA +  RDi , data = reg_sc_psem,family = gaussian(link = "identity")),
+  lm(DBH2  ~ PD + CBD_10 + RDi + SRA  , data = reg_sc_psem),
+  lm(CBD_10 ~ RDi + PD + invsimpson_div_10 + SRA, data = reg_sc_psem),
+  lm(RDi ~ PD + invsimpson_div_10 + SRA, data = reg_sc_psem),
+  lm(PD ~ invsimpson_div_10 + SRA, data = reg_sc_psem),
+  SRA %~~% invsimpson_div_10
+  )
+summary(modelList)
+plot(modelList)
+
+
+
 #啊啊啊啊，检验之后不行哇！！！！完全不行哇！！！
 #glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 * RDi +(1|Family),
  #                 reg_scaled, family = ordbeta)
 #summary(glm_10)
+
+
+
+######
+#我也不知道这是啥
+#####
 library(DHARMa)
 glm_10_simres <- simulateResiduals(glm_10)
 plot(glm_10_simres)
