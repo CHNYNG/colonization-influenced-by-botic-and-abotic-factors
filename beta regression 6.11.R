@@ -203,3 +203,42 @@ plot_grid(p1, p2, rel_widths = c(5, 1))
 library(eoffice)
 library(ggplotify)
 topptx(p, filename = "~/pic/eoffice.pptx")
+
+
+# consider spatial random effect
+# we construct 50m * 50m cells
+# you can try other cells like 20 * 20
+am_beta_dat$GX[am_beta_dat$GX == 1000] <- 999.99
+am_beta_dat$GY[am_beta_dat$GY == 500] <- 499.99
+am_beta_dat$GX[am_beta_dat$GX == 0] <- 0.01
+am_beta_dat$GY[am_beta_dat$GY == 0] <- 0.01
+
+am_beta_dat$cellx50 <- am_beta_dat$GX %/% 50 
+am_beta_dat$celly50 <- am_beta_dat$GY %/% 50
+
+am_beta_dat$c50 <- factor(paste((am_beta_dat$celly50 + 1001), 
+                                sep = "_", 
+                                (am_beta_dat$cellx50 + 1001)))
+
+# we can then construct psem
+# but you need optimize it!
+am_col_psem <- psem(
+  glmmTMB(
+    am ~ minpd_10 + avepd_10 + DBH2 + CBD_10 + invsimpson_div_10 +
+      RDi + pcoa1 + pcoa2 + rd_is + (1 | c50),
+    data = am_beta_dat,
+    family = beta_family
+  ),
+  
+  lm(CBD_10 ~ minpd_10 + avepd_10 + RDi + pcoa1 + pcoa2 + rd_is, data = am_beta_dat),
+  
+  lm(DBH2 ~ minpd_10 + avepd_10 + RDi + CBD_10 + pcoa1 + pcoa2 + rd_is, data = am_beta_dat),
+  
+  lm(invsimpson_div_10 ~ pcoa1 + pcoa2 + minpd_10 + DBH2 + CBD_10 + avepd_10 + RDi + rd_is, data = am_beta_dat),
+  
+  lm(minpd_10 ~ RDi + pcoa1 + pcoa2+ rd_is, data = am_beta_dat),
+  
+  lm(avepd_10 ~ minpd_10 + RDi + pcoa1 + pcoa2 + rd_is, data = am_beta_dat)
+)
+
+summary(am_col_psem)
