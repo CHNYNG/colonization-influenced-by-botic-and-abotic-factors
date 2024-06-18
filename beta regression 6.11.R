@@ -14,10 +14,12 @@ load("D:/Users/65205/Documents/WeChat Files/wxid_ulzapgmya6hv22/FileStorage/File
 #first obtain the distance matrix of the species phylo
 library(ape)
 library(phangorn)
+library(vegan)
 species_to_keep <- am_phylo_pcoa_axes$Latin
 filtered_tree <- keep.tip(hsd_phytr, species_to_keep)
 dist_matrix <- cophenetic(filtered_tree)
-#dist_matrix <- scale(dist_matrix)
+dist_matrix <- sqrt(dist_matrix)
+decostand(dist_matrix, "range")
 
 #second, play the pcoa
 library(vegan)
@@ -26,7 +28,7 @@ pcoa_result <- cmdscale(dist_matrix)
 
 
 am_phylo_pcoa_axes_try <- as.data.frame(as.data.frame(pcoa_result))
-am_phylo_pcoa_axes_try <- decostand(am_phylo_pcoa_axes_try, "normalize", MARGIN = 2)*50
+am_phylo_pcoa_axes_try <- decostand(am_phylo_pcoa_axes_try, "standardize", MARGIN = 2)
 am_phylo_pcoa_axes_try <- as.data.frame(am_phylo_pcoa_axes_try)
 summary(am_phylo_pcoa_axes_try)
 summary(am_phylo_pcoa_axes)
@@ -62,8 +64,8 @@ am_beta_dat <- reg_scaled %>%
     BD_10,
     invsimpson_div_10,
   ) %>%
-  left_join(am_phylo_pcoa_axes) %>%
-  mutate_if(is.numeric, scale) %>%
+  left_join(am_phylo_pcoa_axes, by = "Latin") %>%
+#  mutate_if(is.numeric, scale) %>%
   mutate(
     rd_is = scale(RDi * invsimpson_div_10),
     rr_is = scale(RRi * invsimpson_div_10),
@@ -100,6 +102,10 @@ am_beta_mod_optimal <- betareg(
   am ~ minpd_10 + avepd_10 + DBH2 + CBD_10 + invsimpson_div_10 + RDi + pcoa1 + pcoa2 + rd_is,
   data = am_beta_dat
 )
+summary(am_beta_mod_optimal)
+
+if (!require("ggplot2")) install.packages("ggplot2")
+library(ggplot2)
 
 # you will find it's wired that in am_beta_mod_minaic, the RDi is excluded
 # but in am_beta_mod_optimal, I included it!
@@ -112,52 +118,88 @@ am_beta_mod_optimal <- betareg(
 # it doesn't matter
 # constructing your psem with all the variables in am_beta_mod_optimal
 
+#画图
+# 安装并加载所需的包
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("gridExtra")) install.packages("gridExtra")
+library(ggplot2)
+library(gridExtra)
 
-#psem
-library(piecewiseSEM)
-# 筛选出特定列并删除带有NA的行
+# 提取估计值和标准误差
+summary_obj <- summary(am_beta_mod_optimal)
 
-# 加载 dplyr 包
-library(dplyr)
+estimates <- as.vector(summary_obj$coefficients$mean[,"Estimate"])
+std_errors <- as.vector(summary_obj$coefficients$mean[, "Std. Error"])
 
-# 筛选出 am 列不为空值的行，并选择特定列
-reg_sc_psem <- reg_scaled %>%
-  filter(!is.na(am)) %>%
-  select(am, minpd_10, avepd_10, totpd_10, SRA, DBH2, CBD_10, invsimpson_div_10, RDi, soc, tn, tp, ap, ph, moisture,
-         Order, Family, Genus, Latin)
+# 去掉(Intercept)的行
+estimates <- estimates[-1]
+std_errors <- std_errors[-1]
 
-library(lme4)
+variables <- c("min.Pd", "ave.Pd", "DBH", "con.BD", "IS", "RD", "pcoa1", "pcoa2", "RD*IS")
 
-#####直接再重新做一个psem
-##玩我…
-#把pd做一个复合函数
-PD1 <- lm(am ~ minpd_10 + avepd_10 + totpd_10 , reg_sc_psem)
-summary(PD1)
-coefs(Neighbor, standardize = 'scale')
-beta_minpd_10 <- summary(PD1)$coefficients[2,1]
-beta_avepd_10 <- summary(PD1)$coefficients[3,1]
-beta_totpd_10 <- summary(PD1)$coefficients[4,1]
-PD <- beta_minpd_10*reg_sc_psem$minpd_10 + beta_avepd_10*reg_sc_psem$avepd_10 +
-  beta_totpd_10*reg_sc_psem$totpd_10
-reg_sc_psem$PD <- PD
-summary(lm(am ~ PD, reg_sc_psem))
-coefs(lm(am ~ PD, reg_sc_psem))
+# 计算估计值的绝对值
+abs_estimates <- abs(estimates)
 
-#其他的都分别来
-modelList <- psem(
-  glm(am ~ PD + CBD_10 + invsimpson_div_10 + DBH2 + SRA +  RDi , data = reg_sc_psem,family = gaussian(link = "identity")),
-  lm(DBH2  ~ PD + CBD_10 + RDi + SRA  , data = reg_sc_psem),
-  lm(CBD_10 ~ RDi + PD + invsimpson_div_10 + SRA, data = reg_sc_psem),
-  lm(RDi ~ PD + invsimpson_div_10 + SRA, data = reg_sc_psem),
-  lm(PD ~ invsimpson_div_10 + SRA, data = reg_sc_psem),
-  SRA %~~% invsimpson_div_10
+# 计算总的估计值绝对值
+total_abs_estimate <- sum(abs_estimates)
+
+# 计算每个变量的贡献值
+contributions <- abs_estimates / total_abs_estimate
+
+# 创建数据框
+data <- data.frame(
+  Variable = factor(variables, levels = c("RD*IS", "RD", "DBH", "pcoa2", "pcoa1", "ave.Pd", "min.Pd", "IS", "con.BD")),
+  Estimate = estimates,
+  StdError = std_errors,
+  Contribution = contributions,
+  CumulativeContribution = cumsum(contributions)
 )
-summary(modelList)
-plot(modelList)
+colors <- c("con.BD" = "#004529", "IS" = "#004529", "min.Pd" = "#006837", "ave.Pd" = "#006837", 
+            "pcoa1" = "#41ab5d", "pcoa2" = "#41ab5d", "DBH" = "#addd8e", "RD" = "#feb24c", "RD*IS" = "#ffeda0")
 
+y_cols <- c("#ffeda0" , "#feb24c", "#addd8e","#41ab5d", "#41ab5d", "#006837", "#006837","#00452c", "#004529")
+# 创建左侧的估计值和标准误差图
+# 创建左侧的估计值和标准误差图
+p1 <- ggplot(data, aes(x = Estimate, y = Variable, color = Variable)) +
+  geom_point(size = 3) +
+  geom_errorbarh(aes(xmin = Estimate - StdError, xmax = Estimate + StdError), height = 0.1, size = 2) +
+  geom_vline(xintercept =   0, linetype = "dashed", color = "#bdbdbd", size = 1) + # 添加竖线
+  scale_color_manual(values = colors) +
+  theme_minimal() +
+  theme(legend.position = "none",# 去掉图例
+        axis.text.y = element_text(colour = y_cols, size = 20),
+        axis.text.x = element_text(size = 20, colour = "#252525"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+       # panel.grid.major = element_blank(),# 去掉主网格线
+        panel.grid.minor = element_blank()   # 去掉次网格线
+  )
+p1
+# 创建右侧的累计贡献值柱状图
+# 创建右侧的累计贡献值柱状图，按反序排列变量
+p2 <- ggplot(data, aes(x = 1, y = Contribution, fill = factor(Variable, levels = rev(levels(data$Variable))))) +
+  geom_bar(stat = "identity", width = 0.5) +
+  scale_fill_manual(values = colors) +
+#  labs(x = "Contribution", y = NULL) +
+  scale_y_continuous(labels = scales::percent, position = "right") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),#element_text(size = 20, colour = "#252525"),
+    axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_text(size = 20, colour = "#252525"),
+        legend.position = "none",
+    panel.grid.major = element_blank(),# 去掉主网格线
+    panel.grid.minor = element_blank()   # 去掉次网格线
+    )
+p2
 
-
-#啊啊啊啊，检验之后不行哇！！！！完全不行哇！！！
-#glm_10 <- glmmTMB(am ~ minpd_10 + avepd_10 + totpd_10 + SRA + DBH2 + CBD_10 + invsimpson_div_10 * RDi +(1|Family),
-#                 reg_scaled, family = ordbeta)
-#summary(glm_10)
+# 将两个图放在一起
+#pdf(file = "output.pdf", width = 6, height = 4)
+library(cowplot)
+plot_grid(p1, p2, rel_widths = c(5, 1))
+#grid.arrange(p1, p2, ncol = 2)
+#导出到ppt里改吧。。。
+library(eoffice)
+library(ggplotify)
+topptx(p, filename = "~/pic/eoffice.pptx")
