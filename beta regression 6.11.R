@@ -63,16 +63,35 @@ am_beta_dat <- reg_scaled %>%
     CBD_10,
     BD_10,
     invsimpson_div_10,
+    #site
+    GX,
+    GY
   ) %>%
   left_join(am_phylo_pcoa_axes, by = "Latin") %>%
-#  mutate_if(is.numeric, scale) %>%
+  mutate_if(is.numeric, scale) %>%
   mutate(
     rd_is = scale(RDi * invsimpson_div_10),
     rr_is = scale(RRi * invsimpson_div_10),
     re_is = scale(REi * invsimpson_div_10),
     am_beta_dat %>% filter(!is.na(am)) %>% select(am)
   )
-
+am_beta_dat <- am_beta_dat %>%
+  mutate(across(c(RDi, RRi, REi,
+                  DBH2,AD,
+                  SRL,
+                  SRA,
+                  elevation,
+                  slope,
+                  aspect,
+                  convexity,
+                  minpd_10,
+                  avepd_10,
+                  totpd_10,
+                  CBD_10,
+                  BD_10,
+                  invsimpson_div_10,
+                  rd_is, rr_is, re_is,
+                  GX, GY), as.numeric))
 # I only calculate the pcoa axes of 161 species, and put them in: am_phylo_pcoa_axes
 
 # beta regression and model selection
@@ -129,13 +148,13 @@ library(gridExtra)
 summary_obj <- summary(am_beta_mod_optimal)
 
 estimates <- as.vector(summary_obj$coefficients$mean[,"Estimate"])
-std_errors <- as.vector(summary_obj$coefficients$mean[, "Std. Error"])
+std_errors <- as.vector(summary_obj$coefficients$mean[,"Std. Error"])
 
 # 去掉(Intercept)的行
 estimates <- estimates[-1]
 std_errors <- std_errors[-1]
 
-variables <- c("min.Pd", "ave.Pd", "DBH", "con.BD", "IS", "RD", "pcoa1", "pcoa2", "RD*IS")
+variables <- c("min.Pd", "ave.Pd", "DBH", "con.BD", "2D", "RD", "phylo_PCoA1", "phylo_PCoA2", "RD*2D")
 
 # 计算估计值的绝对值
 abs_estimates <- abs(estimates)
@@ -148,36 +167,52 @@ contributions <- abs_estimates / total_abs_estimate
 
 # 创建数据框
 data <- data.frame(
-  Variable = factor(variables, levels = c("RD*IS", "RD", "DBH", "pcoa2", "pcoa1", "ave.Pd", "min.Pd", "IS", "con.BD")),
+  Variable = factor(variables, levels = c("RD*2D","RD", "DBH","phylo_PCoA2","phylo_PCoA1", "ave.Pd","min.Pd","2D","con.BD" )),
   Estimate = estimates,
   StdError = std_errors,
   Contribution = contributions,
   CumulativeContribution = cumsum(contributions)
 )
-colors <- c("con.BD" = "#004529", "IS" = "#004529", "min.Pd" = "#006837", "ave.Pd" = "#006837", 
-            "pcoa1" = "#41ab5d", "pcoa2" = "#41ab5d", "DBH" = "#addd8e", "RD" = "#feb24c", "RD*IS" = "#ffeda0")
+labels <- c(
+  "con.BD",
+  expression(""^2*D),
+  "min.Pd",
+  "ave.Pd",
+  "phylo_PCoA2",
+  "phylo_PCoA1",
+  "DBH",
+  "RD",
+  expression(RD *"*"* ""^2*D)
+)
+colors <- c("con.BD" = "#004529", "2D" = "#004529", "min.Pd" = "#004529", "ave.Pd" =  "#004529", 
+            "phylo_PCoA1" = "#006837", "phylo_PCoA2" = "#006837", "DBH" = "#41ab5d", "RD" = "#feb24c", "RD*2D"="#feb24c")
 
-y_cols <- c("#ffeda0" , "#feb24c", "#addd8e","#41ab5d", "#41ab5d", "#006837", "#006837","#00452c", "#004529")
+y_cols <- c(  "#feb24c" , "#feb24c", "#41ab5d", "#006837", "#006837",  "#004529", "#004529", "#004529", "#004529"   )
 # 创建左侧的估计值和标准误差图
 # 创建左侧的估计值和标准误差图
+
 p1 <- ggplot(data, aes(x = Estimate, y = Variable, color = Variable)) +
   geom_point(size = 3) +
-  geom_errorbarh(aes(xmin = Estimate - StdError, xmax = Estimate + StdError), height = 0.1, size = 2) +
+  geom_errorbarh(aes(xmin = Estimate - StdError*1.96, xmax = Estimate + StdError*1.96), height = 0.1, size = 2) +
   geom_vline(xintercept =   0, linetype = "dashed", color = "#bdbdbd", size = 1) + # 添加竖线
   scale_color_manual(values = colors) +
+ # labs(y = expression("Hill Numbers"["2D"]))+
+  scale_y_discrete(labels =  c(
+    expression(RD *"*"* ""^2*D),"RD","DBH","phylo_PCoA1","phylo_PCoA2","ave.Pd","min.Pd",expression(""^2*D),"con.BD")) + 
   theme_minimal() +
   theme(legend.position = "none",# 去掉图例
         axis.text.y = element_text(colour = y_cols, size = 20),
-        axis.text.x = element_text(size = 20, colour = "#252525"),
+       # axis.text.x = element_text(size = 20, colour = "#252525"),
         axis.title.y = element_blank(),
         axis.title.x = element_blank(),
        # panel.grid.major = element_blank(),# 去掉主网格线
         panel.grid.minor = element_blank()   # 去掉次网格线
   )
 p1
+
 # 创建右侧的累计贡献值柱状图
 # 创建右侧的累计贡献值柱状图，按反序排列变量
-p2 <- ggplot(data, aes(x = 1, y = Contribution, fill = factor(Variable, levels = rev(levels(data$Variable))))) +
+p2 <- ggplot(data, aes(x = 1, y = Contribution, fill = factor(Variable, levels = rev(levels(data$Variable))))) +#rev(levels(data$Variable))
   geom_bar(stat = "identity", width = 0.5) +
   scale_fill_manual(values = colors) +
 #  labs(x = "Contribution", y = NULL) +
@@ -197,48 +232,66 @@ p2
 # 将两个图放在一起
 #pdf(file = "output.pdf", width = 6, height = 4)
 library(cowplot)
-plot_grid(p1, p2, rel_widths = c(5, 1))
+regressionplot <- plot_grid(p1, p2, rel_widths = c(5, 1))
+regressionplot
+ggsave(
+  "pic/figure4.png",
+  regressionplot,
+  width = 2000,
+  height = 1100,
+  units = "px",
+  dpi = 300
+)
 #grid.arrange(p1, p2, ncol = 2)
 #导出到ppt里改吧。。。
-library(eoffice)
-library(ggplotify)
-topptx(p, filename = "~/pic/eoffice.pptx")
+#library(eoffice)
+#library(ggplotify)
+#topptx(p, filename = "~/pic/eoffice.pptx")
 
 
-# consider spatial random effect
-# we construct 50m * 50m cells
-# you can try other cells like 20 * 20
-am_beta_dat$GX[am_beta_dat$GX == 1000] <- 999.99
-am_beta_dat$GY[am_beta_dat$GY == 500] <- 499.99
-am_beta_dat$GX[am_beta_dat$GX == 0] <- 0.01
-am_beta_dat$GY[am_beta_dat$GY == 0] <- 0.01
-
-am_beta_dat$cellx50 <- am_beta_dat$GX %/% 50 
-am_beta_dat$celly50 <- am_beta_dat$GY %/% 50
-
-am_beta_dat$c50 <- factor(paste((am_beta_dat$celly50 + 1001), 
-                                sep = "_", 
-                                (am_beta_dat$cellx50 + 1001)))
 
 # we can then construct psem
 # but you need optimize it!
-am_col_psem <- psem(
+
+#sem
+library(glmmTMB)
+library(piecewiseSEM)
+am_col_psem2 <- psem(
+  # am
   glmmTMB(
     am ~ minpd_10 + avepd_10 + DBH2 + CBD_10 + invsimpson_div_10 +
-      RDi + pcoa1 + pcoa2 + rd_is + (1 | c50),
+      RDi + pcoa1 + pcoa2 + (1 | c50),
     data = am_beta_dat,
     family = beta_family
   ),
   
-  lm(CBD_10 ~ minpd_10 + avepd_10 + RDi + pcoa1 + pcoa2 + rd_is, data = am_beta_dat),
+  # neighboring effect
+  lm(CBD_10 ~ pcoa1 + pcoa2, data = am_beta_dat),
   
-  lm(DBH2 ~ minpd_10 + avepd_10 + RDi + CBD_10 + pcoa1 + pcoa2 + rd_is, data = am_beta_dat),
+  lm(invsimpson_div_10 ~ RDi + pcoa1, data = am_beta_dat),
   
-  lm(invsimpson_div_10 ~ pcoa1 + pcoa2 + minpd_10 + DBH2 + CBD_10 + avepd_10 + RDi + rd_is, data = am_beta_dat),
+  lm(minpd_10 ~ pcoa1 + pcoa2, data = am_beta_dat),
   
-  lm(minpd_10 ~ RDi + pcoa1 + pcoa2+ rd_is, data = am_beta_dat),
+  lm(avepd_10 ~ RDi + pcoa1 + pcoa2, data = am_beta_dat),
   
-  lm(avepd_10 ~ minpd_10 + RDi + pcoa1 + pcoa2 + rd_is, data = am_beta_dat)
+  # size
+  lm(
+    DBH2 ~ CBD_10 + pcoa1 + pcoa2 + minpd_10 + avepd_10,
+    data = am_beta_dat
+  ),
+  
+  # correlation
+  avepd_10 %~~% minpd_10,
+  
+  invsimpson_div_10 %~~% minpd_10,
+  
+  invsimpson_div_10 %~~% avepd_10,
+  
+  invsimpson_div_10 %~~% CBD_10,
+  
+  CBD_10 %~~% minpd_10,
+  
+  CBD_10 %~~% avepd_10
 )
 
-summary(am_col_psem)
+summary(am_col_psem2)

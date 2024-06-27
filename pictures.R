@@ -75,7 +75,17 @@ combined_plot <- ggplot() +
 
 print(combined_plot)
 
+ggsave(
+  "pic/figure1.png",
+  combined_plot,
+  width = 3000,
+  height = 1600,
+  units = "px",
+  dpi = 300
+  
+)
 library(dplyr)
+library(ggplot2)
 
 # 计算 reg$am 的均值并按其排序
 Latin_mean <- reg %>%
@@ -83,49 +93,506 @@ Latin_mean <- reg %>%
   summarize(mean_am = mean(am, na.rm = TRUE)) %>%
   arrange(desc(mean_am))
 
+# 手动选择要显示的物种
+# 选定的物种名称
+selected_species <- c("Exbucklandia_tonkinensis", "Garcinia_multiflora", "Ardisia_elegans", 
+                      "Cryptocarya_concinna", "Vitex_quinata", "Rhododendron_simsii", 
+                      "Castanopsis_fissa", "Ixonanthes_chinensis", "Craibiodendron_stellatum", 
+                      "Lithocarpus_lohangwu")
 
-# 按 reg$Latin 的均值排序后绘制柱状图
-top_6 <- Latin_mean %>%
-  arrange(desc(mean_am)) %>%
-  head(6) %>%
-  pull(Latin)
+# 设置颜色
+species_colors <- c("Exbucklandia tonkinensis" = "#004529", 
+                    "Garcinia multiflora" = "#004529", 
+                    "Ardisia elegans" = "#004529", 
+                    "Cryptocarya concinna" = "#004529", 
+                    "Vitex quinata" = "#004529", 
+                    "Rhododendron simsii" = "#addd8e", 
+                    "Castanopsis fissa" = "#addd8e", 
+                    "Ixonanthes chinensis" = "#b2df8a", 
+                    "Craibiodendron stellatum" = "#addd8e", 
+                    "Lithocarpus lohangwu" = "#addd8e")
 
-bottom_6 <- Latin_mean %>%
-  arrange(mean_am) %>%
-  head(6) %>%
-  pull(Latin)
-
-# Combine top 5 and bottom 5 species
-selected_species <- c(top_6, bottom_6)
-
-# Filter the original data to include only these species
+# 构建数据框，并将拉丁名中的下划线替换为空格
 filtered_reg <- reg %>%
-  mutate(group = case_when(
-    Latin %in% top_6 ~ "Top 5",
-    Latin %in% bottom_6 ~ "Bottom 5",
-    TRUE ~ NA_character_
-  )) %>%
-  filter(!is.na(group))
-filtered_reg <- filtered_reg %>%
-  filter(Latin %in% selected_species)
-filtered_reg <- filtered_reg %>%
-  mutate(Latin = factor(Latin, levels = c(top_6, bottom_6)))
+  filter(Latin %in% selected_species) %>%
+  mutate(Latin = gsub("_", " ", Latin)) %>%
+  mutate(Latin = factor(Latin, levels = gsub("_", " ", selected_species)))
 
-
-# Create the violin plot
-ggplot(filtered_reg, aes(x = reorder(Latin, -am), y = am, fill = Latin)) +
-  geom_violin() +
-  geom_jitter(width = 0.2, size = 0.5, alpha = 0.5) +  # Add jitter for better visualization of points
-  labs(x = "Species", y = "Colonization Intensity") +
+# 创建箱线图
+am.plot <- ggplot(filtered_reg, aes(x = Latin, y = am, fill = Latin)) +
+  geom_boxplot() +
+  # geom_jitter(width = 0.2, size = 0.5, alpha = 0.5) +  # 添加散点图以更好地可视化数据点
+  labs(x = NULL, y = "Colonization Intensity") +
+  scale_fill_manual(values = species_colors) +  # 手动设置颜色
   theme_minimal() +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, face = 'italic', size = 8),
+    axis.text.x = element_text(angle = 20, hjust = 1, face = 'italic', size = 12),
     panel.grid.major = element_line(color = "gray"),
     axis.text = element_text(color = "black", size = 12),
     axis.title = element_text(color = "black", size = 14),
     plot.title = element_text(color = "black", size = 16, hjust = 0.5),
     plot.subtitle = element_text(color = "black", size = 14, hjust = 0.5),
-    legend.position = "none"  # Remove legend if not needed
+    legend.position = "none"  # 移除图例（如果不需要）
   ) +
-  coord_cartesian(ylim = c(0.3, 1))  # Set y-axis limits
+  coord_cartesian(ylim = c(0.3, 1))  # 设置 y 轴范围elected_species <- c("Exbucklandia_tonkinensis", "Garcinia_multiflora", "Ardisia_elegans", "Cryptocarya_concinna", "Vitex_quinata", "Rhododendron_simsii", "Castanopsis_fissa", "Ixonanthes_chinensis", "Craibiodendron_stellatum", "Lithocarpus_lohangwu")
 
+
+ggsave(
+  "pic/figure2.png",
+  am.plot,
+  width = 2000,
+  height = 1100,
+  units = "px",
+  dpi = 300
+)
+
+# 每个变量单独作图 ----
+# DBH2
+am_dbh <- betareg(am ~ DBH2, data = am_beta_dat)
+summary(am_dbh) #显著，留下
+# Add fitted values
+am_dbh_fitted <- predict(am_dbh, type = "response")
+am_dbh_lower <- predict(am_dbh, type = "quantile", at = 0.025)
+am_dbh_upper <- predict(am_dbh, type = "quantile", at = 0.975)
+
+am_dbh_dat <- am_beta_dat %>% 
+  select(am, DBH2, Latin) %>% 
+  mutate(
+    fitted = am_dbh_fitted,
+    lower = am_dbh_lower,
+    upper = am_dbh_upper
+  )
+
+am_dbh_p <- ggplot(am_dbh_dat, aes(x = DBH2, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "DBH", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_dbh_p
+
+###做其他变量的图
+###### SRA
+am_beta_dat_SRA <- am_beta_dat[!is.na(am_beta_dat$SRA), ]
+am_SRA <- betareg(am ~ SRA, data = am_beta_dat_SRA)
+summary(am_SRA) #p = 0.0881
+# Add fitted values
+am_SRA_fitted <- predict(am_SRA, type = "response")
+
+am_SRA_dat <- am_beta_dat_SRA %>% 
+  select(am, SRA, Latin) %>% 
+  mutate(
+    fitted = am_SRA_fitted)
+
+am_SRA_p <- ggplot(am_SRA_dat, aes(x = SRA, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "SRA", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_SRA_p
+
+###### SRL
+am_beta_dat_SRL <- am_beta_dat[!is.na(am_beta_dat$SRL), ]
+am_SRL <- betareg(am ~ SRL, data = am_beta_dat_SRL)
+summary(am_SRL) #不显著，丢掉
+# Add fitted values
+am_SRL_fitted <- predict(am_SRL, type = "response")
+
+am_SRL_dat <- am_beta_dat_SRL %>% 
+  select(am, SRL, Latin) %>% 
+  mutate(
+    fitted = am_SRL_fitted)
+
+am_SRL_p <- ggplot(am_SRL_dat, aes(x = SRL, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "SRL", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_SRL_p
+
+
+#AD
+am_beta_dat_AD <- am_beta_dat[!is.na(am_beta_dat$AD), ]
+am_AD <- betareg(am ~ AD, data = am_beta_dat_AD)
+summary(am_AD) #p=0.0294
+# Add fitted values
+am_AD_fitted <- predict(am_AD, type = "response")
+
+am_AD_dat <- am_beta_dat_AD %>% 
+  select(am, AD, Latin) %>% 
+  mutate(
+    fitted = am_AD_fitted)
+
+am_AD_p <- ggplot(am_AD_dat, aes(x = AD, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "AD", y =NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_AD_p
+
+
+#BD
+am_beta_dat_BD <- am_beta_dat[!is.na(am_beta_dat$BD_10), ]
+am_BD <- betareg(am ~ BD_10, data = am_beta_dat_BD)
+summary(am_BD) #p=0.767
+# BDd fitted values
+am_BD_fitted <- predict(am_BD, type = "response")
+
+am_BD_dat <- am_beta_dat_BD %>% 
+  select(am, BD_10, Latin) %>% 
+  mutate(
+    fitted = am_BD_fitted)
+
+am_BD_p <- ggplot(am_BD_dat, aes(x = BD_10, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "BD", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_BD_p
+
+
+#CBD
+am_beta_dat_CBD <- am_beta_dat[!is.na(am_beta_dat$CBD_10), ]
+am_CBD <- betareg(am ~ CBD_10, data = am_beta_dat_CBD)
+summary(am_CBD) #p=0.0105
+# CBDd fitted values
+am_CBD_fitted <- predict(am_CBD, type = "response")
+
+am_CBD_dat <- am_beta_dat_CBD %>% 
+  select(am, CBD_10, Latin) %>% 
+  mutate(
+    fitted = am_CBD_fitted)
+
+am_CBD_p <- ggplot(am_CBD_dat, aes(x = CBD_10, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "CBD", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_CBD_p
+
+
+#invsimpson_div
+am_beta_dat_invsimpson_div <- am_beta_dat[!is.na(am_beta_dat$invsimpson_div_10), ]
+am_invsimpson_div <- betareg(am ~ invsimpson_div_10, data = am_beta_dat_invsimpson_div)
+summary(am_invsimpson_div) #p=0.17
+# invsimpson_divd fitted values
+am_invsimpson_div_fitted <- predict(am_invsimpson_div, type = "response")
+
+am_invsimpson_div_dat <- am_beta_dat_invsimpson_div %>% 
+  select(am, invsimpson_div_10, Latin) %>% 
+  mutate(
+    fitted = am_invsimpson_div_fitted)
+
+am_invsimpson_div_p <- ggplot(am_invsimpson_div_dat, aes(x = invsimpson_div_10, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "invsimpson_div", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_invsimpson_div_p
+
+#minpd
+am_beta_dat_minpd <- am_beta_dat[!is.na(am_beta_dat$minpd_10), ]
+am_minpd <- betareg(am ~ minpd_10, data = am_beta_dat_minpd)
+summary(am_minpd) #p=0.17
+# minpdd fitted values
+am_minpd_fitted <- predict(am_minpd, type = "response")
+
+am_minpd_dat <- am_beta_dat_minpd %>% 
+  select(am, minpd_10, Latin) %>% 
+  mutate(
+    fitted = am_minpd_fitted)
+
+am_minpd_p <- ggplot(am_minpd_dat, aes(x = minpd_10, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "minpd", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_minpd_p
+
+#avepd
+am_beta_dat_avepd <- am_beta_dat[!is.na(am_beta_dat$avepd_10), ]
+am_avepd <- betareg(am ~ avepd_10, data = am_beta_dat_avepd)
+summary(am_avepd) #p=0.4
+# avepdd fitted values
+am_avepd_fitted <- predict(am_avepd, type = "response")
+
+am_avepd_dat <- am_beta_dat_avepd %>% 
+  select(am, avepd_10, Latin) %>% 
+  mutate(
+    fitted = am_avepd_fitted)
+
+am_avepd_p <- ggplot(am_avepd_dat, aes(x = avepd_10, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "avepd", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_avepd_p
+
+#totpd
+am_beta_dat_totpd <- am_beta_dat[!is.na(am_beta_dat$totpd_10), ]
+am_totpd <- betareg(am ~ totpd_10, data = am_beta_dat_totpd)
+summary(am_totpd) #p=0.651
+# totpdd fitted values
+am_totpd_fitted <- predict(am_totpd, type = "response")
+
+am_totpd_dat <- am_beta_dat_totpd %>% 
+  select(am, totpd_10, Latin) %>% 
+  mutate(
+    fitted = am_totpd_fitted)
+
+am_totpd_p <- ggplot(am_totpd_dat, aes(x = totpd_10, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "totpd", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_totpd_p
+
+#pcoa1
+am_beta_dat_pcoa1 <- am_beta_dat[!is.na(am_beta_dat$pcoa1), ]
+am_pcoa1 <- betareg(am ~ pcoa1, data = am_beta_dat_pcoa1)
+summary(am_pcoa1) #p=0.00786
+# pcoa1d fitted values
+am_pcoa1_fitted <- predict(am_pcoa1, type = "response")
+
+am_pcoa1_dat <- am_beta_dat_pcoa1 %>% 
+  select(am, pcoa1, Latin) %>% 
+  mutate(
+    fitted = am_pcoa1_fitted)
+
+am_pcoa1_p <- ggplot(am_pcoa1_dat, aes(x = pcoa1, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "pcoa1", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_pcoa1_p
+
+#pcoa2
+am_beta_dat_pcoa2 <- am_beta_dat[!is.na(am_beta_dat$pcoa2), ]
+am_pcoa2 <- betareg(am ~ pcoa2, data = am_beta_dat_pcoa2)
+summary(am_pcoa2) #p=0.00786
+# pcoa2d fitted values
+am_pcoa2_fitted <- predict(am_pcoa2, type = "response")
+
+am_pcoa2_dat <- am_beta_dat_pcoa2 %>% 
+  select(am, pcoa2, Latin) %>% 
+  mutate(
+    fitted = am_pcoa2_fitted)
+
+am_pcoa2_p <- ggplot(am_pcoa2_dat, aes(x = pcoa2, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "pcoa2", y =NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_pcoa2_p
+
+#RD
+am_beta_dat_RD <- am_beta_dat[!is.na(am_beta_dat$RDi), ]
+am_RD <- betareg(am ~ RDi, data = am_beta_dat_RD)
+summary(am_RD) #p=0.207
+# RDd fitted values
+am_RD_fitted <- predict(am_RD, type = "response")
+
+am_RD_dat <- am_beta_dat_RD %>% 
+  select(am, RDi, Latin) %>% 
+  mutate(
+    fitted = am_RD_fitted)
+
+am_RD_p <- ggplot(am_RD_dat, aes(x = RDi, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "RD", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+am_RD_p
+
+library(cowplot)
+lmplot <- plot_grid(am_dbh_p, am_pcoa1_p, am_pcoa2_p,
+                            am_minpd_p,am_CBD_p, am_AD_p,
+                            nrow = 2,
+                            ncol = 3)
+lmplot
+
+
+ggsave(
+  "pic/figure5.png",
+  lmplot,
+  width = 2000,
+  height = 1100,
+  units = "px",
+  dpi = 300
+)
+
+
+
+
+
+
+
+
+
+
+# 对比linear的结果
+ggplot(am_dbh_dat, aes(x = DBH2, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  geom_smooth(method = "lm", se = F, linetype = "dashed") +
+  labs(x = "DBH", y = "AMF colonization rates") +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+
+ggsave(
+  "test.png",
+  am_dbh_p,
+  dpi = 600
+)
