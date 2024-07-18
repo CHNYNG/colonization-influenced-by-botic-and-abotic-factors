@@ -63,6 +63,7 @@ am_beta_dat <- reg_scaled %>%
     CBD_10,
     BD_10,
     invsimpson_div_10,
+    richness_10,
     #site
     GX,
     GY
@@ -90,6 +91,7 @@ am_beta_dat <- am_beta_dat %>%
                   CBD_10,
                   BD_10,
                   invsimpson_div_10,
+                  richness_10,
                   rd_is, rr_is, re_is,
                   GX, GY), as.numeric))
 # I only calculate the pcoa axes of 161 species, and put them in: am_phylo_pcoa_axes
@@ -100,7 +102,7 @@ library(betareg)
 options(na.action = "na.omit")
 am_beta_mod_ful <- betareg(
   am ~ minpd_10 + avepd_10 + totpd_10 + AD + SRL + SRA + DBH2 + CBD_10 + BD_10 + 
-    elevation + invsimpson_div_10 + RDi + pcoa1 + pcoa2 + rd_is,
+    elevation + invsimpson_div_10 + richness_10 + RDi + pcoa1 + pcoa2 + rd_is,
   data = am_beta_dat
 )
 summary(am_beta_mod_ful)
@@ -173,17 +175,29 @@ data <- data.frame(
   Contribution = contributions,
   CumulativeContribution = cumsum(contributions)
 )
-labels <- c(
-  "con.BD",
-  expression(""^2*D),
-  "min.Pd",
-  "ave.Pd",
-  "phylo_PCoA2",
-  "phylo_PCoA1",
-  "DBH",
-  "RD",
-  expression(RD *"*"* ""^2*D)
-)
+# 提取 p 值
+p_values <- as.vector(summary_obj$coefficients$mean[,"Pr(>|z|)"])
+p_values <- p_values[-1] # 去掉(Intercept)的行
+
+# 根据 p 值添加 * 表示
+p_stars <- sapply(p_values, function(p) {
+  if (p < 0.001) {
+    "***"
+  } else if (p < 0.01) {
+    "**"
+  } else if (p < 0.05) {
+    "*"
+  } else {
+    ""
+  }
+})
+
+# 将估计值和 p 值标签合并为一个字符串
+labels <- paste0(round(estimates, 3), p_stars)
+
+# 将标签添加到数据框
+data$labels <- labels
+
 colors <- c("con.BD" = "#004529", "2D" = "#004529", "min.Pd" = "#004529", "ave.Pd" =  "#004529", 
             "phylo_PCoA1" = "#006837", "phylo_PCoA2" = "#006837", "DBH" = "#41ab5d", "RD" = "#feb24c", "RD*2D"="#feb24c")
 
@@ -198,16 +212,17 @@ p1 <- ggplot(data, aes(x = Estimate, y = Variable, color = Variable)) +
   scale_color_manual(values = colors) +
  # labs(y = expression("Hill Numbers"["2D"]))+
   scale_y_discrete(labels =  c(
-    expression(RD *"*"* ""^2*D),"RD","DBH","phylo_PCoA1","phylo_PCoA2","ave.Pd","min.Pd",expression(""^2*D),"con.BD")) + 
+    expression(RD *"*"* ""^2*italic(D)),"RD","DBH","phylo_PCoA1","phylo_PCoA2","ave.Pd","min.Pd",expression(""^2*italic(D)),"con.BD")) + 
   theme_minimal() +
   theme(legend.position = "none",# 去掉图例
         axis.text.y = element_text(colour = y_cols, size = 20),
-       # axis.text.x = element_text(size = 20, colour = "#252525"),
+        axis.text.x = element_text(size = 15, colour = "#252525"),
         axis.title.y = element_blank(),
         axis.title.x = element_blank(),
        # panel.grid.major = element_blank(),# 去掉主网格线
         panel.grid.minor = element_blank()   # 去掉次网格线
-  )
+  )+
+  geom_text(aes(label = labels), hjust = -0.2, vjust = -0.5, size = 4) # 添加标签
 p1
 
 # 创建右侧的累计贡献值柱状图
@@ -238,9 +253,10 @@ ggsave(
   "pic/figure4.png",
   regressionplot,
   width = 2000,
-  height = 1100,
+  height = 1500,
   units = "px",
-  dpi = 300
+  dpi = 300,
+  bg = "#FFFFFF"
 )
 #grid.arrange(p1, p2, ncol = 2)
 #导出到ppt里改吧。。。

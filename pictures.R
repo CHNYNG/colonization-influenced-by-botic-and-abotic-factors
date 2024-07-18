@@ -86,13 +86,19 @@ ggsave(
 )
 library(dplyr)
 library(ggplot2)
-
+library(ggpubr)
 # 计算 reg$am 的均值并按其排序
 Latin_mean <- reg %>%
   group_by(Latin) %>%
   summarize(mean_am = mean(am, na.rm = TRUE)) %>%
   arrange(desc(mean_am))
-
+Latin_mean <- reg %>%
+  group_by(Latin) %>%
+  summarize(
+    mean_am = mean(am, na.rm = TRUE),
+    sd_am = sd(am, na.rm = TRUE)
+  )
+write.csv(Latin_mean, "Appendix.Table S1.csv")
 # 手动选择要显示的物种
 # 选定的物种名称
 selected_species <- c("Exbucklandia_tonkinensis", "Garcinia_multiflora", "Ardisia_elegans", 
@@ -118,38 +124,95 @@ filtered_reg <- reg %>%
   mutate(Latin = gsub("_", " ", Latin)) %>%
   mutate(Latin = factor(Latin, levels = gsub("_", " ", selected_species)))
 
-# 创建箱线图
-am.plot <- ggplot(filtered_reg, aes(x = Latin, y = am, fill = Latin)) +
-  geom_boxplot() +
-  # geom_jitter(width = 0.2, size = 0.5, alpha = 0.5) +  # 添加散点图以更好地可视化数据点
-  labs(x = NULL, y = "Colonization Intensity") +
+am_stats <- filtered_reg %>%
+  group_by(Latin) %>%
+  summarize(
+    mean_am = mean(am, na.rm = TRUE),
+    sd_am = sd(am, na.rm = TRUE)
+)
+
+am.plot <- ggplot(am_stats, aes(x = Latin, y = mean_am, fill = Latin)) +
+  geom_bar(stat = "identity", position = position_dodge(), color = "black") +
+  geom_errorbar(aes(ymin = mean_am - sd_am, ymax = mean_am + sd_am), 
+                width = 0.2, position = position_dodge(0.9)) +
+#  geom_point(data = filtered_reg, aes(x = Latin, y = am), 
+#             position = position_jitter(width = 0.2), alpha = 0.5) +
+  stat_compare_means(method = "t.test", label = "p.signif", comparisons = list(
+    c("Exbucklandia tonkinensis", "Rhododendron simsii"),
+    c("Garcinia multiflora","Castanopsis fissa" ),
+    c("Ardisia elegans","Ixonanthes chinensis" ),
+    c("Cryptocarya concinna", "Craibiodendron stellatum"),
+    c("Vitex quinata", "Lithocarpus lohangwu")
+  )) +
+  labs(x = NULL, y = "Colonization Rates") +
   scale_fill_manual(values = species_colors) +  # 手动设置颜色
   theme_minimal() +
   theme(
-    axis.text.x = element_text(angle = 20, hjust = 1, face = 'italic', size = 12),
+    axis.text.x = element_text(angle = 60, hjust = 1, face = 'italic', size = 14),
+    axis.text.y = element_text(size = 14),
     panel.grid.major = element_line(color = "gray"),
-    axis.text = element_text(color = "black", size = 12),
     axis.title = element_text(color = "black", size = 14),
     plot.title = element_text(color = "black", size = 16, hjust = 0.5),
     plot.subtitle = element_text(color = "black", size = 14, hjust = 0.5),
     legend.position = "none"  # 移除图例（如果不需要）
   ) +
-  coord_cartesian(ylim = c(0.3, 1))  # 设置 y 轴范围elected_species <- c("Exbucklandia_tonkinensis", "Garcinia_multiflora", "Ardisia_elegans", "Cryptocarya_concinna", "Vitex_quinata", "Rhododendron_simsii", "Castanopsis_fissa", "Ixonanthes_chinensis", "Craibiodendron_stellatum", "Lithocarpus_lohangwu")
+  coord_cartesian(ylim = c(0.3, 1))  # 设置 y 轴范围
+
+print(am.plot)
 
 
 ggsave(
   "pic/figure2.png",
   am.plot,
-  width = 2000,
-  height = 1100,
+  width = 3000,
+  height = 2200,
   units = "px",
-  dpi = 300
+  dpi = 300,
+  bg = "#ffffff"
 )
 
 # 每个变量单独作图 ----
 # DBH2
 am_dbh <- betareg(am ~ DBH2, data = am_beta_dat)
 summary(am_dbh) #显著，留下
+p_value <- coef(summary(am_dbh))$mean["DBH2", "Pr(>|z|)"]
+# 设置 p 值标签
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
+
+#dbh fitted values
+am_dbh_fitted <- predict(am_dbh, type = "response")
+
+am_dbh_dat <- am_beta_dat %>% 
+  select(am, DBH2, Latin) %>% 
+  mutate(
+    fitted = am_dbh_fitted)
+
+am_dbh_p <- ggplot(am_dbh_dat, aes(x = DBH2, y = am)) +
+  geom_point(
+    size = 2,
+    color = "darkgrey",
+    alpha = 0.7
+  ) +
+  geom_line(aes(y = fitted),
+            color = "#004529",
+            linewidth = 1.2) +
+  labs(x = "DBH", y = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  ) +
+  annotate("text", x = max(am_dbh_dat$DBH2), y = max(am_dbh_dat$am), 
+           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
+
+print(am_dbh_p)
+
+
 # Add fitted values
 am_dbh_fitted <- predict(am_dbh, type = "response")
 am_dbh_lower <- predict(am_dbh, type = "quantile", at = 0.025)
@@ -247,6 +310,15 @@ am_SRL_p
 am_beta_dat_AD <- am_beta_dat[!is.na(am_beta_dat$AD), ]
 am_AD <- betareg(am ~ AD, data = am_beta_dat_AD)
 summary(am_AD) #p=0.0294
+
+p_value <- coef(summary(am_AD))$mean["AD", "Pr(>|z|)"]
+
+# 设置 p 值标签，保留三位小数
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
 # Add fitted values
 am_AD_fitted <- predict(am_AD, type = "response")
 
@@ -270,7 +342,9 @@ am_AD_p <- ggplot(am_AD_dat, aes(x = AD, y = am)) +
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
+  )+
+  annotate("text", x = max(am_AD_dat$AD), y = max(am_AD_dat$am), 
+           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
 am_AD_p
 
 
@@ -309,6 +383,12 @@ am_BD_p
 am_beta_dat_CBD <- am_beta_dat[!is.na(am_beta_dat$CBD_10), ]
 am_CBD <- betareg(am ~ CBD_10, data = am_beta_dat_CBD)
 summary(am_CBD) #p=0.0105
+p_value <- coef(summary(am_CBD))$mean["CBD_10", "Pr(>|z|)"]
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
 # CBDd fitted values
 am_CBD_fitted <- predict(am_CBD, type = "response")
 
@@ -326,13 +406,15 @@ am_CBD_p <- ggplot(am_CBD_dat, aes(x = CBD_10, y = am)) +
   geom_line(aes(y = fitted),
             color = "#004529",
             linewidth = 1.2) +
-  labs(x = "CBD", y = NULL) +
+  labs(x = "con.BD", y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
+  )+
+  annotate("text", x = max(am_CBD_dat$CBD_10), y = max(am_CBD_dat$am), 
+           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
 am_CBD_p
 
 
@@ -357,7 +439,7 @@ am_invsimpson_div_p <- ggplot(am_invsimpson_div_dat, aes(x = invsimpson_div_10, 
   geom_line(aes(y = fitted),
             color = "#004529",
             linewidth = 1.2) +
-  labs(x = "invsimpson_div", y = NULL) +
+  labs(x = "2D", y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
@@ -370,10 +452,18 @@ am_invsimpson_div_p
 am_beta_dat_minpd <- am_beta_dat[!is.na(am_beta_dat$minpd_10), ]
 am_minpd <- betareg(am ~ minpd_10, data = am_beta_dat_minpd)
 summary(am_minpd) #p=0.17
-# minpdd fitted values
+p_value <- coef(summary(am_minpd))$mean["minpd_10", "Pr(>|z|)"]
+# 设置 p 值标签
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
+
+#dbh fitted values
 am_minpd_fitted <- predict(am_minpd, type = "response")
 
-am_minpd_dat <- am_beta_dat_minpd %>% 
+am_minpd_dat <- am_beta_dat %>% 
   select(am, minpd_10, Latin) %>% 
   mutate(
     fitted = am_minpd_fitted)
@@ -387,14 +477,17 @@ am_minpd_p <- ggplot(am_minpd_dat, aes(x = minpd_10, y = am)) +
   geom_line(aes(y = fitted),
             color = "#004529",
             linewidth = 1.2) +
-  labs(x = "minpd", y = NULL) +
+  labs(x = "min.Pd", y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
-am_minpd_p
+  ) +
+  annotate("text", x = max(am_minpd_dat$minpd_10), y = max(am_minpd_dat$am), 
+           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
+
+print(am_minpd_p)
 
 #avepd
 am_beta_dat_avepd <- am_beta_dat[!is.na(am_beta_dat$avepd_10), ]
@@ -417,7 +510,7 @@ am_avepd_p <- ggplot(am_avepd_dat, aes(x = avepd_10, y = am)) +
   geom_line(aes(y = fitted),
             color = "#004529",
             linewidth = 1.2) +
-  labs(x = "avepd", y = NULL) +
+  labs(x = "ave.Pd", y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
@@ -447,7 +540,7 @@ am_totpd_p <- ggplot(am_totpd_dat, aes(x = totpd_10, y = am)) +
   geom_line(aes(y = fitted),
             color = "#004529",
             linewidth = 1.2) +
-  labs(x = "totpd", y = NULL) +
+  labs(x = "sum.Pd", y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
@@ -460,7 +553,15 @@ am_totpd_p
 am_beta_dat_pcoa1 <- am_beta_dat[!is.na(am_beta_dat$pcoa1), ]
 am_pcoa1 <- betareg(am ~ pcoa1, data = am_beta_dat_pcoa1)
 summary(am_pcoa1) #p=0.00786
-# pcoa1d fitted values
+p_value <- coef(summary(am_pcoa1))$mean["pcoa1", "Pr(>|z|)"]
+# 设置 p 值标签
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
+
+# pcoa2d fitted values
 am_pcoa1_fitted <- predict(am_pcoa1, type = "response")
 
 am_pcoa1_dat <- am_beta_dat_pcoa1 %>% 
@@ -477,19 +578,31 @@ am_pcoa1_p <- ggplot(am_pcoa1_dat, aes(x = pcoa1, y = am)) +
   geom_line(aes(y = fitted),
             color = "#004529",
             linewidth = 1.2) +
-  labs(x = "pcoa1", y = NULL) +
+  labs(x = "phylo_PCoA1", y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
-am_pcoa1_p
+  ) +
+  annotate("text", x = max(am_pcoa1_dat$pcoa1), y = max(am_pcoa1_dat$am), 
+           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
+
+print(am_pcoa1_p)
 
 #pcoa2
 am_beta_dat_pcoa2 <- am_beta_dat[!is.na(am_beta_dat$pcoa2), ]
 am_pcoa2 <- betareg(am ~ pcoa2, data = am_beta_dat_pcoa2)
 summary(am_pcoa2) #p=0.00786
+
+p_value <- coef(summary(am_pcoa2))$mean["pcoa2", "Pr(>|z|)"]
+# 设置 p 值标签
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", format(p_value, digits = 3))
+}
+
 # pcoa2d fitted values
 am_pcoa2_fitted <- predict(am_pcoa2, type = "response")
 
@@ -507,14 +620,17 @@ am_pcoa2_p <- ggplot(am_pcoa2_dat, aes(x = pcoa2, y = am)) +
   geom_line(aes(y = fitted),
             color = "#004529",
             linewidth = 1.2) +
-  labs(x = "pcoa2", y =NULL) +
+  labs(x = "phylo_PCoA2", y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
-am_pcoa2_p
+  ) +
+  annotate("text", x = max(am_pcoa2_dat$pcoa2), y = max(am_pcoa2_dat$am), 
+           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
+
+print(am_pcoa2_p)
 
 #RD
 am_beta_dat_RD <- am_beta_dat[!is.na(am_beta_dat$RDi), ]
@@ -560,14 +676,9 @@ ggsave(
   width = 2000,
   height = 1100,
   units = "px",
-  dpi = 300
+  dpi = 300,
+  bg = "#FFFFFF"
 )
-
-
-
-
-
-
 
 
 

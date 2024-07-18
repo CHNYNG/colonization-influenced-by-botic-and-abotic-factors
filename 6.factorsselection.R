@@ -203,7 +203,7 @@ scale_data <- reg %>%
          BD_20, CBD_20, HBD_20,
          BD_10, CBD_10, HBD_10,
          BD_50, CBD_50, HBD_50,
-         BD_100, CBD_100, HBD_100)
+         BD_100, CBD_100, HBD_100, richness_10)
 
 scale_data <- as.matrix(scale_data)
 scale_data <- apply(scale_data,2,scale)
@@ -230,7 +230,7 @@ reg_scaled <- reg %>%
           -BD_20, -CBD_20, -HBD_20,
           -BD_10, -CBD_10, -HBD_10,
           -BD_100, -CBD_100, -HBD_100,
-          -BD_50, -CBD_50, -HBD_50)%>%
+          -BD_50, -CBD_50, -HBD_50, -richness_10)%>%
   bind_cols(scale_data)
 
 rm(scale_data)

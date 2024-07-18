@@ -118,8 +118,11 @@ invsimpson_div_10 <- as.data.frame(invsimpson_div_10)
 #辛普森多样性指数（Simpson Diversity Index）
 simpson_div_10 <- diversity(hsd_vegan_alpha_10, index = "simpson")
 simpson_div_10 <- as.data.frame(simpson_div_10)
+richness_10 <- specnumber(hsd_vegan_alpha_10)
+richness_10 <- as.data.frame(richness_10)
 ######整理数据为β多样性矩阵(需要的话)
 hsd_vegan_beita_10 <- ifelse(hsd_vegan_alpha_10 >= 1, 1, 0)
+
 #计算β多样性指数
 # 计算 Jaccard 相似性指数作为β多样性的距离
 #beta_div_jaccard_10 <- vegdist(hsd_vegan_alpha_10, method = "jaccard")
@@ -139,7 +142,8 @@ sp_loc <- sp_loc %>%
   mutate(
     shannon_div_10 = shannon_div_10$shannon_div_10,
     invsimpson_div_10 = invsimpson_div_10$invsimpson_div_10,
-    simpson_div_10 = simpson_div_10$simpson_div_10
+    simpson_div_10 = simpson_div_10$simpson_div_10,
+    richness_10 = richness_10$richness_10
   )
 
 #删掉一些无用的变量
