@@ -181,9 +181,9 @@ root_qrl <- root_qrl %>%
 
 ###这里用species来merge一下数据库里的菌根类型
 ##### 给数据库加载物种信息
-#library(devtools)
+library(devtools)
 #这几个包服务器都加载不了，所以用电脑把数据抠出来，在存进来导入
-#install_github("helixcn/plantlist", build_vignettes = TRUE)
+install_github("helixcn/plantlist", build_vignettes = TRUE)
 #加载plantlist包
 library(plantlist)
 #先筛选出所有的物种
