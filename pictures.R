@@ -172,7 +172,7 @@ ggsave(
 )
 
 # 每个变量单独作图 ----
-# DBH2
+#### DBH2 ####
 am_dbh <- betareg(am ~ DBH2, data = am_beta_dat)
 summary(am_dbh) #显著，留下
 p_value <- coef(summary(am_dbh))$mean["DBH2", "Pr(>|z|)"]
@@ -306,7 +306,7 @@ am_SRL_p <- ggplot(am_SRL_dat, aes(x = SRL, y = am)) +
 am_SRL_p
 
 
-#AD
+#### AD ####
 am_beta_dat_AD <- am_beta_dat[!is.na(am_beta_dat$AD), ]
 am_AD <- betareg(am ~ AD, data = am_beta_dat_AD)
 summary(am_AD) #p=0.0294
@@ -336,7 +336,7 @@ am_AD_p <- ggplot(am_AD_dat, aes(x = AD, y = am)) +
   geom_line(aes(y = fitted),
             color = "#004529",
             linewidth = 1.2) +
-  labs(x = "AD", y =NULL) +
+  labs(x = "RAD", y =NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
@@ -352,7 +352,7 @@ am_AD_p
 am_beta_dat_BD <- am_beta_dat[!is.na(am_beta_dat$BD_10), ]
 am_BD <- betareg(am ~ BD_10, data = am_beta_dat_BD)
 summary(am_BD) #p=0.767
-# BDd fitted values
+# BD fitted values
 am_BD_fitted <- predict(am_BD, type = "response")
 
 am_BD_dat <- am_beta_dat_BD %>% 

@@ -53,7 +53,7 @@ am_tn_p <- ggplot(am_tn_dat, aes(x = tn, y = am)) +
 
 print(am_tn_p)
 
-##### tp #######
+#### tp ####
 am_tp <- betareg(am ~ tp, data = df)
 summary(am_tp) #显著，留下
 p_value <- coef(summary(am_tp))$mean["tp", "Pr(>|z|)"]
@@ -94,19 +94,24 @@ am_tp_p <- ggplot(am_tp_dat, aes(x = tp, y = am)) +
 
 print(am_tp_p)
 
-##### tn/tp #####
+### tn/tp ####
+
+###### fillter ####
+
+df <- df %>%
+  filter(tndtp != max(tndtp, na.rm = TRUE))
 am_tndtp <- betareg(am ~ tndtp, data = df)
 summary(am_tndtp) #显著，留下
 p_value <- coef(summary(am_tndtp))$mean["tndtp", "Pr(>|z|)"]
 
-# 设置 p 值标签
+###### 设置 p 值标签 ######
 if (p_value < 0.001) {
   p_label <- "italic(p) < 0.001"
 } else {
   p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
 }
 
-#tndtp fitted values
+###### tndtp fitted values #####
 am_tndtp_fitted <- predict(am_tndtp, type = "response", na.action = na.exclude)
 
 am_tndtp_dat <- df %>% 
@@ -135,7 +140,7 @@ am_tndtp_p <- ggplot(am_tndtp_dat, aes(x = tndtp, y = am)) +
 
 print(am_tndtp_p)
 
-##### output the pictures #####
+#### output the pictures ####
 
 ggsave(
   "pic/tn.png",
