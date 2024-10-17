@@ -172,7 +172,7 @@ ggsave(
 )
 
 # 每个变量单独作图 ----
-#### DBH2 ####
+##### DBH2 #####
 am_dbh <- betareg(am ~ DBH2, data = am_beta_dat)
 summary(am_dbh) #显著，留下
 p_value <- coef(summary(am_dbh))$mean["DBH2", "Pr(>|z|)"]
@@ -200,7 +200,7 @@ am_dbh_p <- ggplot(am_dbh_dat, aes(x = DBH2, y = am)) +
   geom_line(aes(y = fitted),
             color = "#004529",
             linewidth = 1.2) +
-  labs(x = "DBH", y = NULL) +
+  labs(x = "DBH", y = "AMFR") +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
@@ -245,7 +245,7 @@ am_dbh_p <- ggplot(am_dbh_dat, aes(x = DBH2, y = am)) +
 am_dbh_p
 
 ###做其他变量的图
-###### SRA
+##### SRA ####
 am_beta_dat_SRA <- am_beta_dat[!is.na(am_beta_dat$SRA), ]
 am_SRA <- betareg(am ~ SRA, data = am_beta_dat_SRA)
 summary(am_SRA) #p = 0.0881
@@ -275,7 +275,7 @@ am_SRA_p <- ggplot(am_SRA_dat, aes(x = SRA, y = am)) +
   )
 am_SRA_p
 
-###### SRL
+##### SRL ####
 am_beta_dat_SRL <- am_beta_dat[!is.na(am_beta_dat$SRL), ]
 am_SRL <- betareg(am ~ SRL, data = am_beta_dat_SRL)
 summary(am_SRL) #不显著，丢掉
@@ -348,7 +348,7 @@ am_AD_p <- ggplot(am_AD_dat, aes(x = AD, y = am)) +
 am_AD_p
 
 
-#BD
+##### BD ####
 am_beta_dat_BD <- am_beta_dat[!is.na(am_beta_dat$BD_10), ]
 am_BD <- betareg(am ~ BD_10, data = am_beta_dat_BD)
 summary(am_BD) #p=0.767
@@ -379,7 +379,7 @@ am_BD_p <- ggplot(am_BD_dat, aes(x = BD_10, y = am)) +
 am_BD_p
 
 
-#CBD
+##### CBD ####
 am_beta_dat_CBD <- am_beta_dat[!is.na(am_beta_dat$CBD_10), ]
 am_CBD <- betareg(am ~ CBD_10, data = am_beta_dat_CBD)
 summary(am_CBD) #p=0.0105
@@ -418,11 +418,11 @@ am_CBD_p <- ggplot(am_CBD_dat, aes(x = CBD_10, y = am)) +
 am_CBD_p
 
 
-#invsimpson_div
+##### invsimpson_div ####
 am_beta_dat_invsimpson_div <- am_beta_dat[!is.na(am_beta_dat$invsimpson_div_10), ]
 am_invsimpson_div <- betareg(am ~ invsimpson_div_10, data = am_beta_dat_invsimpson_div)
 summary(am_invsimpson_div) #p=0.17
-# invsimpson_divd fitted values
+# invsimpson_divd fitted values 
 am_invsimpson_div_fitted <- predict(am_invsimpson_div, type = "response")
 
 am_invsimpson_div_dat <- am_beta_dat_invsimpson_div %>% 
@@ -448,7 +448,7 @@ am_invsimpson_div_p <- ggplot(am_invsimpson_div_dat, aes(x = invsimpson_div_10, 
   )
 am_invsimpson_div_p
 
-#minpd
+##### minpd ####
 am_beta_dat_minpd <- am_beta_dat[!is.na(am_beta_dat$minpd_10), ]
 am_minpd <- betareg(am ~ minpd_10, data = am_beta_dat_minpd)
 summary(am_minpd) #p=0.17
@@ -460,7 +460,7 @@ if (p_value < 0.001) {
   p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
 }
 
-#dbh fitted values
+#### dbh fitted values 
 am_minpd_fitted <- predict(am_minpd, type = "response")
 
 am_minpd_dat <- am_beta_dat %>% 
@@ -477,7 +477,7 @@ am_minpd_p <- ggplot(am_minpd_dat, aes(x = minpd_10, y = am)) +
   geom_line(aes(y = fitted),
             color = "#004529",
             linewidth = 1.2) +
-  labs(x = "min.Pd", y = NULL) +
+  labs(x = "min.Pd", y = "AMFR") +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
@@ -489,7 +489,7 @@ am_minpd_p <- ggplot(am_minpd_dat, aes(x = minpd_10, y = am)) +
 
 print(am_minpd_p)
 
-#avepd
+##### avepd ####
 am_beta_dat_avepd <- am_beta_dat[!is.na(am_beta_dat$avepd_10), ]
 am_avepd <- betareg(am ~ avepd_10, data = am_beta_dat_avepd)
 summary(am_avepd) #p=0.4
@@ -519,7 +519,7 @@ am_avepd_p <- ggplot(am_avepd_dat, aes(x = avepd_10, y = am)) +
   )
 am_avepd_p
 
-#totpd
+##### totpd ####
 am_beta_dat_totpd <- am_beta_dat[!is.na(am_beta_dat$totpd_10), ]
 am_totpd <- betareg(am ~ totpd_10, data = am_beta_dat_totpd)
 summary(am_totpd) #p=0.651
@@ -549,7 +549,7 @@ am_totpd_p <- ggplot(am_totpd_dat, aes(x = totpd_10, y = am)) +
   )
 am_totpd_p
 
-#pcoa1
+##### pcoa1 ####
 am_beta_dat_pcoa1 <- am_beta_dat[!is.na(am_beta_dat$pcoa1), ]
 am_pcoa1 <- betareg(am ~ pcoa1, data = am_beta_dat_pcoa1)
 summary(am_pcoa1) #p=0.00786
@@ -561,7 +561,7 @@ if (p_value < 0.001) {
   p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
 }
 
-# pcoa2d fitted values
+#### pcoa2d fitted values 
 am_pcoa1_fitted <- predict(am_pcoa1, type = "response")
 
 am_pcoa1_dat <- am_beta_dat_pcoa1 %>% 
@@ -590,7 +590,7 @@ am_pcoa1_p <- ggplot(am_pcoa1_dat, aes(x = pcoa1, y = am)) +
 
 print(am_pcoa1_p)
 
-#pcoa2
+#### pcoa2 ####
 am_beta_dat_pcoa2 <- am_beta_dat[!is.na(am_beta_dat$pcoa2), ]
 am_pcoa2 <- betareg(am ~ pcoa2, data = am_beta_dat_pcoa2)
 summary(am_pcoa2) #p=0.00786
@@ -603,7 +603,7 @@ if (p_value < 0.001) {
   p_label <- paste0("italic(p) == ", format(p_value, digits = 3))
 }
 
-# pcoa2d fitted values
+##### pcoa2d fitted values 
 am_pcoa2_fitted <- predict(am_pcoa2, type = "response")
 
 am_pcoa2_dat <- am_beta_dat_pcoa2 %>% 
@@ -632,7 +632,7 @@ am_pcoa2_p <- ggplot(am_pcoa2_dat, aes(x = pcoa2, y = am)) +
 
 print(am_pcoa2_p)
 
-#RD
+#### RD ####
 am_beta_dat_RD <- am_beta_dat[!is.na(am_beta_dat$RDi), ]
 am_RD <- betareg(am ~ RDi, data = am_beta_dat_RD)
 summary(am_RD) #p=0.207
@@ -662,6 +662,8 @@ am_RD_p <- ggplot(am_RD_dat, aes(x = RDi, y = am)) +
   )
 am_RD_p
 
+
+##### output ####
 library(cowplot)
 lmplot <- plot_grid(am_dbh_p, am_pcoa1_p, am_pcoa2_p,
                             am_minpd_p,am_CBD_p, am_AD_p,
