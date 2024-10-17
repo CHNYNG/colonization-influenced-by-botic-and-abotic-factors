@@ -50,7 +50,7 @@ root_morphology <- length %>%
 #root_warning <- subset(root_morphology, is.na(Weight.g))
 #View(root_warning)
 #write.csv(root_warning,"root_warning.csv",fileEncoding = "GBK")
-
+# 这里记一下单位，SRL是cm/g, SRA是平方cm/g
 root_morphology <- root_morphology %>%
   mutate(SRL = as.numeric(Length) / as.numeric(Weight.g),
          SRA = as.numeric(SurfArea) / as.numeric(Weight.g))
