@@ -203,7 +203,8 @@ scale_data <- reg %>%
          BD_20, CBD_20, HBD_20,
          BD_10, CBD_10, HBD_10,
          BD_50, CBD_50, HBD_50,
-         BD_100, CBD_100, HBD_100, richness_10)
+         BD_100, CBD_100, HBD_100, richness_10) %>%
+  mutate(tndtp = tn/tp)
 
 scale_data <- as.matrix(scale_data)
 scale_data <- apply(scale_data,2,scale)
@@ -234,12 +235,10 @@ reg_scaled <- reg %>%
   bind_cols(scale_data)
 
 rm(scale_data)
-
+#注意！这里没有保存reg_scaled
 save(reg,reg_sc, file = "data/data_for_reg.RData")
 
-#####
-#选择回归用的变量
-#####
+###### 选择回归用的变量 #####
 
 #all
 library(dplyr)
