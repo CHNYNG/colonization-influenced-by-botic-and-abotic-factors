@@ -12,11 +12,11 @@ load("data/env_weitao.RData")
 reg <- data.frame()
 reg <- root_qrl %>%
   left_join(soil_pred[, -which(names(soil_pred) %in% c("GX", "GY"))],
-            by = "TagNew", suffix = c("", "_soil"), relationship = "many-to-many") %>%
+            by = "TagNew", suffix = c("", "_soil")) %>%
   left_join(sp_loc[, -which(names(sp_loc) %in% c("GX", "GY"))],
-            by = "TagNew", suffix = c("", "_sp_loc"), relationship = "many-to-many") %>%
+            by = "TagNew", suffix = c("", "_sp_loc")) %>%
   left_join(hsd_neighbor, 
-            by = "TagNew", suffix = c("", "_hsd_neighbor"), relationship = "many-to-many")
+            by = "TagNew", suffix = c("", "_hsd_neighbor"))
 reg <- cbind(reg,pd_ind_all,env)
 #整理一下reg
 

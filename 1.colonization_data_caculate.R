@@ -27,7 +27,9 @@ diameter <- diameter%>%
 
 HSD_data <- HSD_data %>%
   mutate(TagNew = str_pad(TagNew, width = 7, side = "left", pad = "0")) %>%
-  filter(!(Latin %in% c("A-VINE", "unknown", "T_VINE")))
+  filter(!(Latin %in% c("A-VINE", "unknown", "T_VINE"))) %>%
+  filter(Branch == 0)
+
 
 #insert length
 length <- read.table("data/ylj_for_length.txt",
@@ -47,10 +49,31 @@ weigh <- weigh %>%
 root_morphology <- length %>%
   left_join(diameter, by = "TagNew") %>%
   left_join(weigh, by = "TagNew")
-#root_warning <- subset(root_morphology, is.na(Weight.g))
-#View(root_warning)
+
+#整理一下这个数据
+root_morphology <- root_morphology[-95, ]
+
+# 添加新列 'tag'，标记是否包含 '_1'
+root_morphology <- root_morphology %>%
+  mutate(tag = ifelse(grepl("_1", TagNew), 1, 0))
+
+# 删除 TagNew 列中的 '_1'
+root_morphology <- root_morphology %>%
+  mutate(TagNew = gsub("_1", "", TagNew))
+
+# 删除重复的行，优先保留 tag 为 1 的行
+root_morphology <- root_morphology %>%
+  arrange(TagNew, desc(tag)) %>%  # 按 TagNew 分组并按 tag 降序排列（1 在前）
+  distinct(TagNew, .keep_all = TRUE)  # 删除重复的 TagNew，保留第一个
+
+
+# 查看整理后的数据
+head(root_morphology)
+
+root_warning <- subset(root_morphology, is.na(Weight.g))
+View(root_warning)
 #write.csv(root_warning,"root_warning.csv",fileEncoding = "GBK")
-# 这里记一下单位，SRL是cm/g, SRA是平方cm/g
+# 这里记一下单位，SRL是mm/g, SRA是平方mm/g
 root_morphology <- root_morphology %>%
   mutate(SRL = as.numeric(Length) / as.numeric(Weight.g),
          SRA = as.numeric(SurfArea) / as.numeric(Weight.g))
@@ -79,6 +102,8 @@ Qrl_ca <- Qrl %>%
   summarize(
     gcsys = sum(观察视野总数),
     EMsys = sum(ECM),
+    AM = mean(AM_range),
+    EM = mean(EM_range),
     jssys = sum(菌丝出现视野数),
     BZ = sum(孢子),
     Hbbz = sum(厚壁孢子),
@@ -89,15 +114,15 @@ Qrl_ca <- Qrl %>%
     em = mean(em)
   ) %>%
   mutate(
-    qr_AM = jssys / gcsys,
-    qr_EM = EMsys / gcsys,
+    qr_AM = jssys/gcsys,
+    qr_EM = EMsys/gcsys,
     qr_BZ = BZ / gcsys,
     qr_Hbbz = Hbbz / gcsys,
     qr_Pn = Pn / gcsys,
     qr_Pq = Pq / gcsys,
     qr_fzxb = Fzxb / gcsys
   ) %>%
-  select(qr_AM, qr_EM, qr_BZ, qr_Hbbz, qr_Pn, qr_Pq, qr_fzxb, Numbers,am, em)
+  select(AM, EM, qr_AM, qr_EM, qr_BZ, qr_Hbbz, qr_Pn, qr_Pq, qr_fzxb, Numbers,am, em)
 
 
 #####merge the colonization data to TagNew
@@ -117,14 +142,14 @@ root_qrl <- data.frame()
 
 root_qrl <- Qrl_ca %>%
   left_join(total_data, by = "Numbers") %>%
-  left_join(HSD_data, by = "TagNew", relationship = "many-to-many") %>%
+#  left_join(HSD_data, by = "TagNew") %>%
   left_join(root_morphology, by = "TagNew")
 
 #整理下root_qrl
-root_qrl <- root_qrl %>% select(-X, -Species.y)
+root_qrl <- root_qrl %>% select(-X)
 
 #### 这里处理完了，把已经有的数据删一删
-rm(diameter,weigh,total_data,S_data,N_data,length,Nor_data,Qrl,Qrl_ca,root_morphology)
+#rm(diameter,weigh,total_data,S_data,N_data,length,Nor_data,Qrl,Qrl_ca,root_morphology)
 #save(root_qrl,file = "E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl.RData")
 
 #### 获取物种的菌根类型

@@ -1,6 +1,6 @@
 library(ggplot2)
 
-
+#### 地形图 ####
 elev <- read.csv("data/HSD+env5m.csv", header = TRUE, fileEncoding = "GBK")
 ggplot(elev, aes(x = gx, y = gy, z = elev)) +
   geom_contour() +
@@ -84,6 +84,8 @@ ggsave(
   dpi = 300
   
 )
+
+#### 展示几个物种的侵染率 ####
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
@@ -171,24 +173,37 @@ ggsave(
   bg = "#ffffff"
 )
 
-# 每个变量单独作图 ----
+##### 每个变量单独作图 ---- ####
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(betareg)
+
 ##### DBH2 #####
-am_dbh <- betareg(am ~ DBH2, data = am_beta_dat)
+am_beta_dat_dbh <- am_beta_dat %>%
+  filter(DBH2!=max(DBH2))
+am_dbh <- betareg(am ~ DBH2, data = am_beta_dat_dbh)
 summary(am_dbh) #显著，留下
 p_value <- coef(summary(am_dbh))$mean["DBH2", "Pr(>|z|)"]
+dbh_coef <- coef(summary(am_dbh))$mean["DBH2", "Estimate"]
 # 设置 p 值标签
 if (p_value < 0.001) {
   p_label <- "italic(p) < 0.001"
 } else {
   p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
 }
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", dbh_coef))
+
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
+
 
 #dbh fitted values
 am_dbh_fitted <- predict(am_dbh, type = "response")
 
-am_dbh_dat <- am_beta_dat %>% 
-  select(am, DBH2, Latin) %>% 
-  mutate(
+am_dbh_dat <- am_beta_dat_dbh %>% 
+  dplyr::select(am, DBH2, Latin) %>% 
+  dplyr::mutate(
     fitted = am_dbh_fitted)
 
 am_dbh_p <- ggplot(am_dbh_dat, aes(x = DBH2, y = am)) +
@@ -199,7 +214,8 @@ am_dbh_p <- ggplot(am_dbh_dat, aes(x = DBH2, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
+            linewidth = 1.2,
+            linetype = line_type) +
   labs(x = "DBH", y = "AMFR") +
   theme_minimal() +
   theme(
@@ -207,54 +223,67 @@ am_dbh_p <- ggplot(am_dbh_dat, aes(x = DBH2, y = am)) +
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
   ) +
-  annotate("text", x = max(am_dbh_dat$DBH2), y = max(am_dbh_dat$am), 
-           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
-
+  annotate("text", x = max(am_beta_dat_dbh$DBH2), y = max(am_beta_dat_dbh$am), 
+           label =  paste(coef_label, p_label, sep = '~~~'), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
 print(am_dbh_p)
 
 
 # Add fitted values
-am_dbh_fitted <- predict(am_dbh, type = "response")
-am_dbh_lower <- predict(am_dbh, type = "quantile", at = 0.025)
-am_dbh_upper <- predict(am_dbh, type = "quantile", at = 0.975)
+#am_dbh_fitted <- predict(am_dbh, type = "response")
+#am_dbh_lower <- predict(am_dbh, type = "quantile", at = 0.025)
+#am_dbh_upper <- predict(am_dbh, type = "quantile", at = 0.975)
 
-am_dbh_dat <- am_beta_dat %>% 
-  select(am, DBH2, Latin) %>% 
-  mutate(
-    fitted = am_dbh_fitted,
-    lower = am_dbh_lower,
-    upper = am_dbh_upper
-  )
+#am_dbh_dat <- am_beta_dat %>% 
+#  select(am, DBH2, Latin) %>% 
+#  mutate(
+#   fitted = am_dbh_fitted,
+#    lower = am_dbh_lower,
+#    upper = am_dbh_upper
+ # )
 
-am_dbh_p <- ggplot(am_dbh_dat, aes(x = DBH2, y = am)) +
-  geom_point(
-    size = 2,
-    color = "darkgrey",
-    alpha = 0.7
-  ) +
-  geom_line(aes(y = fitted),
-            color = "#004529",
-            linewidth = 1.2) +
-  labs(x = "DBH", y = NULL) +
-  theme_minimal() +
-  theme(
-    axis.text = element_text(face = "bold", size = 12),
-    axis.title = element_text(face = "bold", size = 14),
-    legend.position = "none"
-  )
-am_dbh_p
+#am_dbh_p <- ggplot(am_dbh_dat, aes(x = DBH2, y = am)) +
+#  geom_point(
+#    size = 2,
+#    color = "darkgrey",
+#    alpha = 0.7
+#  ) +
+#  geom_line(aes(y = fitted),
+#            color = "#004529",
+#            linewidth = 1.2) +
+#  labs(x = "DBH", y = NULL) +
+#  theme_minimal() +
+#  theme(
+#    axis.text = element_text(face = "bold", size = 12),
+#    axis.title = element_text(face = "bold", size = 14),
+#    legend.position = "none"
+#  )
+#am_dbh_p
 
-###做其他变量的图
 ##### SRA ####
 am_beta_dat_SRA <- am_beta_dat[!is.na(am_beta_dat$SRA), ]
 am_SRA <- betareg(am ~ SRA, data = am_beta_dat_SRA)
-summary(am_SRA) #p = 0.0881
-# Add fitted values
+summary(am_SRA) #p=0.0294
+
+p_value <- coef(summary(am_SRA))$mean["SRA", "Pr(>|z|)"]
+SRA_coef <- coef(summary(am_SRA))$mean["SRA", "Estimate"]
+# 设置 p 值标签，保留三位小数
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
+# 设置系数标签
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", SRA_coef))
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
+
+# SRAd fitted values
 am_SRA_fitted <- predict(am_SRA, type = "response")
 
 am_SRA_dat <- am_beta_dat_SRA %>% 
-  select(am, SRA, Latin) %>% 
-  mutate(
+  dplyr::select(am, SRA, Latin) %>% 
+  dplyr::mutate(
     fitted = am_SRA_fitted)
 
 am_SRA_p <- ggplot(am_SRA_dat, aes(x = SRA, y = am)) +
@@ -265,26 +294,45 @@ am_SRA_p <- ggplot(am_SRA_dat, aes(x = SRA, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
-  labs(x = "SRA", y = NULL) +
+            linewidth = 1.2,
+            linetype = line_type) +
+  labs(x = "SRA", y ="AMFR") +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
+  )+
+  annotate("text", x = max(am_beta_dat_SRA$SRA), y = max(am_beta_dat_SRA$am), 
+           label =  paste(coef_label, p_label, sep = '~~~'), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
 am_SRA_p
 
 ##### SRL ####
 am_beta_dat_SRL <- am_beta_dat[!is.na(am_beta_dat$SRL), ]
 am_SRL <- betareg(am ~ SRL, data = am_beta_dat_SRL)
-summary(am_SRL) #不显著，丢掉
-# Add fitted values
+summary(am_SRL) #p=0.0294
+
+p_value <- coef(summary(am_SRL))$mean["SRL", "Pr(>|z|)"]
+SRL_coef <- coef(summary(am_SRL))$mean["SRL", "Estimate"]
+
+# 设置 p 值标签，保留三位小数
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
+############ 设置系数标签
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", SRL_coef))
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
+
+# SRLd fitted values
 am_SRL_fitted <- predict(am_SRL, type = "response")
 
 am_SRL_dat <- am_beta_dat_SRL %>% 
-  select(am, SRL, Latin) %>% 
-  mutate(
+  dplyr::select(am, SRL, Latin) %>% 
+  dplyr::mutate(
     fitted = am_SRL_fitted)
 
 am_SRL_p <- ggplot(am_SRL_dat, aes(x = SRL, y = am)) +
@@ -295,37 +343,45 @@ am_SRL_p <- ggplot(am_SRL_dat, aes(x = SRL, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
-  labs(x = "SRL", y = NULL) +
+            linewidth = 1.2,
+            linetype = line_type) +
+  labs(x = "SRL", y =NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
+  )+
+  annotate("text", x = max(am_beta_dat_SRL$SRL), y = max(am_beta_dat_SRL$am), 
+           label =  paste(coef_label, p_label, sep = '~~~'), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
 am_SRL_p
 
 
-#### AD ####
+##### RAD #####
 am_beta_dat_AD <- am_beta_dat[!is.na(am_beta_dat$AD), ]
+am_beta_dat_AD <- am_beta_dat_AD %>%
+  filter(AD!=max(AD))
 am_AD <- betareg(am ~ AD, data = am_beta_dat_AD)
 summary(am_AD) #p=0.0294
 
 p_value <- coef(summary(am_AD))$mean["AD", "Pr(>|z|)"]
-
+AD_coef <- coef(summary(am_AD))$mean["AD", "Estimate"]
 # 设置 p 值标签，保留三位小数
 if (p_value < 0.001) {
   p_label <- "italic(p) < 0.001"
 } else {
   p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
 }
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", AD_coef))
 # Add fitted values
 am_AD_fitted <- predict(am_AD, type = "response")
 
 am_AD_dat <- am_beta_dat_AD %>% 
-  select(am, AD, Latin) %>% 
-  mutate(
+  dplyr::select(am, AD, Latin) %>% 
+  dplyr::mutate(
     fitted = am_AD_fitted)
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 
 am_AD_p <- ggplot(am_AD_dat, aes(x = AD, y = am)) +
   geom_point(
@@ -335,7 +391,8 @@ am_AD_p <- ggplot(am_AD_dat, aes(x = AD, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
+            linewidth = 1.2,
+            linetype = line_type) +
   labs(x = "RAD", y =NULL) +
   theme_minimal() +
   theme(
@@ -343,8 +400,9 @@ am_AD_p <- ggplot(am_AD_dat, aes(x = AD, y = am)) +
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
   )+
-  annotate("text", x = max(am_AD_dat$AD), y = max(am_AD_dat$am), 
-           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
+  annotate("text", x = max(am_beta_dat_AD$AD), y = max(am_beta_dat_AD$am), 
+           label =  paste(coef_label, p_label, sep = '~~~'), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
 am_AD_p
 
 
@@ -352,12 +410,23 @@ am_AD_p
 am_beta_dat_BD <- am_beta_dat[!is.na(am_beta_dat$BD_10), ]
 am_BD <- betareg(am ~ BD_10, data = am_beta_dat_BD)
 summary(am_BD) #p=0.767
+
+p_value <- coef(summary(am_BD))$mean["BD_10", "Pr(>|z|)"]
+BD_coef <- coef(summary(am_BD))$mean["BD_10", "Estimate"]
+# 设置 p 值标签，保留三位小数
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", BD_coef))
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 # BD fitted values
 am_BD_fitted <- predict(am_BD, type = "response")
 
 am_BD_dat <- am_beta_dat_BD %>% 
-  select(am, BD_10, Latin) %>% 
-  mutate(
+  dplyr::select(am, BD_10, Latin) %>% 
+  dplyr::mutate(
     fitted = am_BD_fitted)
 
 am_BD_p <- ggplot(am_BD_dat, aes(x = BD_10, y = am)) +
@@ -368,33 +437,44 @@ am_BD_p <- ggplot(am_BD_dat, aes(x = BD_10, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
-  labs(x = "BD", y = NULL) +
+            linewidth = 1.2,
+            linetype = line_type) +
+  labs(x = "BD", y = "AMFR") +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
+  )+
+  annotate("text", x = max(am_beta_dat_BD$BD), y = max(am_beta_dat_BD$am), 
+           label =  paste(coef_label, p_label, sep = '~~~'), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
 am_BD_p
 
 
 ##### CBD ####
 am_beta_dat_CBD <- am_beta_dat[!is.na(am_beta_dat$CBD_10), ]
+am_beta_dat_CBD <- am_beta_dat_CBD %>%
+  filter(CBD_10!=max(CBD_10))
 am_CBD <- betareg(am ~ CBD_10, data = am_beta_dat_CBD)
 summary(am_CBD) #p=0.0105
 p_value <- coef(summary(am_CBD))$mean["CBD_10", "Pr(>|z|)"]
+CBD_coef <- coef(summary(am_CBD))$mean["CBD_10", "Estimate"]
 if (p_value < 0.001) {
   p_label <- "italic(p) < 0.001"
 } else {
   p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
 }
+############ 设置系数标签
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", CBD_coef))
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 # CBDd fitted values
 am_CBD_fitted <- predict(am_CBD, type = "response")
 
 am_CBD_dat <- am_beta_dat_CBD %>% 
-  select(am, CBD_10, Latin) %>% 
-  mutate(
+  dplyr::select(am, CBD_10, Latin) %>% 
+  dplyr::mutate(
     fitted = am_CBD_fitted)
 
 am_CBD_p <- ggplot(am_CBD_dat, aes(x = CBD_10, y = am)) +
@@ -405,7 +485,8 @@ am_CBD_p <- ggplot(am_CBD_dat, aes(x = CBD_10, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
+            linewidth = 1.2,
+            linetype = line_type) +
   labs(x = "con.BD", y = NULL) +
   theme_minimal() +
   theme(
@@ -413,21 +494,36 @@ am_CBD_p <- ggplot(am_CBD_dat, aes(x = CBD_10, y = am)) +
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
   )+
-  annotate("text", x = max(am_CBD_dat$CBD_10), y = max(am_CBD_dat$am), 
-           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
+  annotate("text", x = max(am_beta_dat_CBD$CBD_10), y = max(am_beta_dat_CBD$am), 
+           label =  paste(coef_label, p_label, sep = '~~~'), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
 am_CBD_p
 
 
 ##### invsimpson_div ####
 am_beta_dat_invsimpson_div <- am_beta_dat[!is.na(am_beta_dat$invsimpson_div_10), ]
+
 am_invsimpson_div <- betareg(am ~ invsimpson_div_10, data = am_beta_dat_invsimpson_div)
 summary(am_invsimpson_div) #p=0.17
+
+p_value <- coef(summary(am_invsimpson_div))$mean["invsimpson_div_10", "Pr(>|z|)"]
+invsimpson_div_coef <- coef(summary(am_invsimpson_div))$mean["invsimpson_div_10", "Estimate"]
+# 设置 p 值标签，保留三位小数
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", formatC(p_value, format = "f", digits = 3))
+}
+############ 设置系数标签
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", invsimpson_div_coef))
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 # invsimpson_divd fitted values 
 am_invsimpson_div_fitted <- predict(am_invsimpson_div, type = "response")
 
 am_invsimpson_div_dat <- am_beta_dat_invsimpson_div %>% 
-  select(am, invsimpson_div_10, Latin) %>% 
-  mutate(
+  dplyr::select(am, invsimpson_div_10, Latin) %>% 
+  dplyr::mutate(
     fitted = am_invsimpson_div_fitted)
 
 am_invsimpson_div_p <- ggplot(am_invsimpson_div_dat, aes(x = invsimpson_div_10, y = am)) +
@@ -438,34 +534,42 @@ am_invsimpson_div_p <- ggplot(am_invsimpson_div_dat, aes(x = invsimpson_div_10, 
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
-  labs(x = "2D", y = NULL) +
+            linewidth = 1.2,
+            linetype = line_type) +
+  labs(x = expression(""^2*italic(D)), y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
+  )+
+  annotate("text", x = max(am_invsimpson_div_dat$invsimpson_div_10), y = max(am_invsimpson_div_dat$am), 
+           label =  sprintf("italic(beta) == '%0.3f' ~ italic(p)=='%0.3f'", invsimpson_div_coef, p_value), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
+
 am_invsimpson_div_p
 
 ##### minpd ####
 am_beta_dat_minpd <- am_beta_dat[!is.na(am_beta_dat$minpd_10), ]
 am_minpd <- betareg(am ~ minpd_10, data = am_beta_dat_minpd)
-summary(am_minpd) #p=0.17
+summary(am_minpd) #p=0.022
 p_value <- coef(summary(am_minpd))$mean["minpd_10", "Pr(>|z|)"]
+minpd_coef <- coef(summary(am_minpd))$mean["minpd_10", "Estimate"]
 # 设置 p 值标签
 if (p_value < 0.001) {
   p_label <- "italic(p) < 0.001"
 } else {
   p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
 }
-
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", minpd_coef))
 #### dbh fitted values 
 am_minpd_fitted <- predict(am_minpd, type = "response")
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 
 am_minpd_dat <- am_beta_dat %>% 
-  select(am, minpd_10, Latin) %>% 
-  mutate(
+  dplyr::select(am, minpd_10, Latin) %>% 
+  dplyr::mutate(
     fitted = am_minpd_fitted)
 
 am_minpd_p <- ggplot(am_minpd_dat, aes(x = minpd_10, y = am)) +
@@ -476,7 +580,8 @@ am_minpd_p <- ggplot(am_minpd_dat, aes(x = minpd_10, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
+            linewidth = 1.2,
+            linetype = line_type) +
   labs(x = "min.Pd", y = "AMFR") +
   theme_minimal() +
   theme(
@@ -485,20 +590,31 @@ am_minpd_p <- ggplot(am_minpd_dat, aes(x = minpd_10, y = am)) +
     legend.position = "none"
   ) +
   annotate("text", x = max(am_minpd_dat$minpd_10), y = max(am_minpd_dat$am), 
-           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
-
+           label =  paste(coef_label, p_label, sep = '~~~'), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
 print(am_minpd_p)
 
 ##### avepd ####
 am_beta_dat_avepd <- am_beta_dat[!is.na(am_beta_dat$avepd_10), ]
 am_avepd <- betareg(am ~ avepd_10, data = am_beta_dat_avepd)
-summary(am_avepd) #p=0.4
-# avepdd fitted values
+summary(am_avepd) #p=0.022
+p_value <- coef(summary(am_avepd))$mean["avepd_10", "Pr(>|z|)"]
+avepd_coef <- coef(summary(am_avepd))$mean["avepd_10", "Estimate"]
+# 设置 p 值标签
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", avepd_coef))
+#### dbh fitted values 
 am_avepd_fitted <- predict(am_avepd, type = "response")
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 
-am_avepd_dat <- am_beta_dat_avepd %>% 
-  select(am, avepd_10, Latin) %>% 
-  mutate(
+am_avepd_dat <- am_beta_dat %>% 
+  dplyr::select(am, avepd_10, Latin) %>% 
+  dplyr::mutate(
     fitted = am_avepd_fitted)
 
 am_avepd_p <- ggplot(am_avepd_dat, aes(x = avepd_10, y = am)) +
@@ -509,26 +625,42 @@ am_avepd_p <- ggplot(am_avepd_dat, aes(x = avepd_10, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
+            linewidth = 1.2,
+            linetype = line_type) +
   labs(x = "ave.Pd", y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
-am_avepd_p
+  ) +
+  annotate("text", x = max(am_avepd_dat$avepd_10), y = max(am_avepd_dat$am), 
+           label =  sprintf("italic(beta) == '%0.3f' ~ italic(p)=='%0.3f'", avepd_coef, p_value), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
+print(am_avepd_p)
+
 
 ##### totpd ####
 am_beta_dat_totpd <- am_beta_dat[!is.na(am_beta_dat$totpd_10), ]
 am_totpd <- betareg(am ~ totpd_10, data = am_beta_dat_totpd)
-summary(am_totpd) #p=0.651
-# totpdd fitted values
+summary(am_totpd) #p=0.022
+p_value <- coef(summary(am_totpd))$mean["totpd_10", "Pr(>|z|)"]
+totpd_coef <- coef(summary(am_totpd))$mean["totpd_10", "Estimate"]
+# 设置 p 值标签
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", totpd_coef))
+#### dbh fitted values 
 am_totpd_fitted <- predict(am_totpd, type = "response")
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 
-am_totpd_dat <- am_beta_dat_totpd %>% 
-  select(am, totpd_10, Latin) %>% 
-  mutate(
+am_totpd_dat <- am_beta_dat %>% 
+  dplyr::select(am, totpd_10, Latin) %>% 
+  dplyr::mutate(
     fitted = am_totpd_fitted)
 
 am_totpd_p <- ggplot(am_totpd_dat, aes(x = totpd_10, y = am)) +
@@ -539,34 +671,41 @@ am_totpd_p <- ggplot(am_totpd_dat, aes(x = totpd_10, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
+            linewidth = 1.2,
+            linetype = line_type) +
   labs(x = "sum.Pd", y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
-am_totpd_p
+  ) +
+  annotate("text", x = max(am_totpd_dat$totpd_10), y = max(am_totpd_dat$am), 
+           label =  paste(coef_label, p_label, sep = '~~~'), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
+print(am_totpd_p)
 
 ##### pcoa1 ####
 am_beta_dat_pcoa1 <- am_beta_dat[!is.na(am_beta_dat$pcoa1), ]
 am_pcoa1 <- betareg(am ~ pcoa1, data = am_beta_dat_pcoa1)
 summary(am_pcoa1) #p=0.00786
 p_value <- coef(summary(am_pcoa1))$mean["pcoa1", "Pr(>|z|)"]
+pcoa1_coef <- coef(summary(am_pcoa1))$mean["pcoa1", "Estimate"]
+
 # 设置 p 值标签
 if (p_value < 0.001) {
   p_label <- "italic(p) < 0.001"
 } else {
   p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
 }
-
-#### pcoa2d fitted values 
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", pcoa1_coef))
+#### pcoa1d fitted values 
 am_pcoa1_fitted <- predict(am_pcoa1, type = "response")
-
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 am_pcoa1_dat <- am_beta_dat_pcoa1 %>% 
-  select(am, pcoa1, Latin) %>% 
-  mutate(
+  dplyr::select(am, pcoa1, Latin) %>% 
+  dplyr::mutate(
     fitted = am_pcoa1_fitted)
 
 am_pcoa1_p <- ggplot(am_pcoa1_dat, aes(x = pcoa1, y = am)) +
@@ -577,8 +716,9 @@ am_pcoa1_p <- ggplot(am_pcoa1_dat, aes(x = pcoa1, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
-  labs(x = "phylo_PCoA1", y = NULL) +
+            linewidth = 1.2,
+            linetype = line_type) +
+  labs(x = "phylo_PCoA1", y = "AMFR") +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
@@ -586,29 +726,32 @@ am_pcoa1_p <- ggplot(am_pcoa1_dat, aes(x = pcoa1, y = am)) +
     legend.position = "none"
   ) +
   annotate("text", x = max(am_pcoa1_dat$pcoa1), y = max(am_pcoa1_dat$am), 
-           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
-
+           label =  paste(coef_label, p_label, sep = '~~~'), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
 print(am_pcoa1_p)
 
-#### pcoa2 ####
+##### pcoa2 ####
 am_beta_dat_pcoa2 <- am_beta_dat[!is.na(am_beta_dat$pcoa2), ]
 am_pcoa2 <- betareg(am ~ pcoa2, data = am_beta_dat_pcoa2)
 summary(am_pcoa2) #p=0.00786
 
 p_value <- coef(summary(am_pcoa2))$mean["pcoa2", "Pr(>|z|)"]
+pcoa2_coef <- coef(summary(am_pcoa2))$mean["pcoa2", "Estimate"]
 # 设置 p 值标签
 if (p_value < 0.001) {
   p_label <- "italic(p) < 0.001"
 } else {
   p_label <- paste0("italic(p) == ", format(p_value, digits = 3))
 }
-
+############ 设置系数标签
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", pcoa2_coef))
 ##### pcoa2d fitted values 
 am_pcoa2_fitted <- predict(am_pcoa2, type = "response")
-
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 am_pcoa2_dat <- am_beta_dat_pcoa2 %>% 
-  select(am, pcoa2, Latin) %>% 
-  mutate(
+  dplyr::select(am, pcoa2, Latin) %>% 
+  dplyr::mutate(
     fitted = am_pcoa2_fitted)
 
 am_pcoa2_p <- ggplot(am_pcoa2_dat, aes(x = pcoa2, y = am)) +
@@ -619,7 +762,8 @@ am_pcoa2_p <- ggplot(am_pcoa2_dat, aes(x = pcoa2, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
+            linewidth = 1.2,
+            linetype = line_type) +
   labs(x = "phylo_PCoA2", y = NULL) +
   theme_minimal() +
   theme(
@@ -628,20 +772,34 @@ am_pcoa2_p <- ggplot(am_pcoa2_dat, aes(x = pcoa2, y = am)) +
     legend.position = "none"
   ) +
   annotate("text", x = max(am_pcoa2_dat$pcoa2), y = max(am_pcoa2_dat$am), 
-           label = p_label, parse = TRUE, hjust = 1, vjust = 1, size = 5)
+           label = paste( sprintf("italic(beta) == '%0.3f'", pcoa2_coef), p_label, sep = "~~~"), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
 
 print(am_pcoa2_p)
 
-#### RD ####
+##### RD ####
 am_beta_dat_RD <- am_beta_dat[!is.na(am_beta_dat$RDi), ]
 am_RD <- betareg(am ~ RDi, data = am_beta_dat_RD)
 summary(am_RD) #p=0.207
+
+p_value <- coef(summary(am_RD))$mean["RDi", "Pr(>|z|)"]
+RD_coef <- coef(summary(am_RD))$mean["RDi", "Estimate"]
+# 设置 p 值标签，保留三位小数
+if (p_value < 0.001) {
+  p_label <- "italic(p) < 0.001"
+} else {
+  p_label <- paste0("italic(p) == ", sprintf("%.3f", p_value))
+}
+############ 设置系数标签
+coef_label <- paste0("italic(beta) == ", sprintf("%.3f", RD_coef))
+
 # RDd fitted values
 am_RD_fitted <- predict(am_RD, type = "response")
-
+# 根据 p 值调整线型
+line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 am_RD_dat <- am_beta_dat_RD %>% 
-  select(am, RDi, Latin) %>% 
-  mutate(
+  dplyr::select(am, RDi, Latin) %>% 
+  dplyr::mutate(
     fitted = am_RD_fitted)
 
 am_RD_p <- ggplot(am_RD_dat, aes(x = RDi, y = am)) +
@@ -652,14 +810,18 @@ am_RD_p <- ggplot(am_RD_dat, aes(x = RDi, y = am)) +
   ) +
   geom_line(aes(y = fitted),
             color = "#004529",
-            linewidth = 1.2) +
+            linewidth = 1.2,
+            linetype = line_type) +
   labs(x = "RD", y = NULL) +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
-  )
+  )+
+  annotate("text", x = max(am_RD_dat$RD), y = max(am_RD_dat$am), 
+           label =  paste(coef_label, p_label, sep = '~~~'), 
+           parse = TRUE, hjust = 1, vjust = 1, size = 5)
 am_RD_p
 
 
@@ -709,3 +871,11 @@ ggsave(
   am_dbh_p,
   dpi = 600
 )
+
+##### 密度图 ####
+ggplot(data, aes(x = ColonizationRate, fill = Species)) +
+  geom_density(alpha = 0.3, show.legend = FALSE) +  # 隐藏图例以简化视觉
+  theme_minimal() +
+  labs(title = "Density Plot of Colonization Rates for Multiple Species",
+       x = "Colonization Rate", y = "Density") +
+  scale_fill_viridis_d()  # 使用渐变调色板
