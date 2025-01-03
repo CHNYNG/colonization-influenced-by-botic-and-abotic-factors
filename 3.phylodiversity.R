@@ -9,6 +9,7 @@ library(tidyverse)
 
 #数据集是root_qrl，黑石顶的数据集是HSD_data
 #location of samples
+
 filtered_root_qrl <- root_qrl %>% 
   filter(!is.na(GX),
          Branch ==0 )
@@ -20,6 +21,7 @@ sp_loc <- data.frame(
   TagNew = filtered_root_qrl$TagNew
 )
 sp_loc <- distinct(sp_loc, TagNew, .keep_all = TRUE)
+
 
 ##画系统发育树
 #library(V.PhyloMaker)

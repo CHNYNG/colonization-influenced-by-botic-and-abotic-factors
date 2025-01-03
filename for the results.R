@@ -3,15 +3,15 @@
 library(dplyr)
 Species <- reg %>%
   group_by(Latin) %>%
-  summarize(mean_am = mean(am, na.rm = TRUE),
-            sd_am = sd(am, na.rm = TRUE)^2) %>%
+  summarize(mean_am = mean(qr_AM, na.rm = TRUE),
+            sd_am = sd(qr_AM, na.rm = TRUE)^2) %>%
   arrange(desc(mean_am))
 ###### 做密度图 ####
 library(dplyr)
 library(ggplot2)
 species_rate <- reg %>%
-  subset(, select = c(Latin, am))
-ggplot(species_rate, aes(x = am, fill = Latin)) +
+  subset(, select = c(Latin, qr_AM))
+ggplot(species_rate, aes(x = qr_AM, fill = Latin)) +
   geom_density(alpha = 0.3, show.legend = FALSE) +  # 隐藏图例以简化视觉
   theme_minimal() +
   labs(title = "Density Plot of Colonization Rates for Multiple Species",

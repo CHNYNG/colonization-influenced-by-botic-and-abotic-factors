@@ -5,14 +5,14 @@ library(tidyr)
 #############selet tn tp and tn/tp and colonization rate############ 
 
 df <- reg_scaled %>%
-  dplyr::select(tn, tp, am, soc, ap, ph, moisture, tndtp, Latin) %>%       # 选择需要的列
+  dplyr::select(tn, tp, qr_AM, soc, ap, ph, moisture, tndtp, Latin) %>%       # 选择需要的列
   tidyr::drop_na() 
 
 # 查看处理后的数据框
 head(df)
 
 ##### tn #########
-am_tn <- betareg(am ~ tn, data = df)
+am_tn <- betareg(qr_AM ~ tn, data = df)
 summary(am_tn) #0.882
 p_value <- coef(summary(am_tn))$mean["tn", "Pr(>|z|)"]
 tn_coef <- coef(summary(am_tn))$mean["tn", "Estimate"]
@@ -32,11 +32,11 @@ line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 am_tn_fitted <- predict(am_tn, type = "response", na.action = na.exclude)
 
 am_tn_dat <- df %>% 
-  dplyr::select(am, tn, Latin) %>% 
+  dplyr::select(qr_AM, tn, Latin) %>% 
   dplyr::mutate(
     fitted = am_tn_fitted)
 
-am_tn_p <- ggplot(am_tn_dat, aes(x = tn, y = am)) +
+am_tn_p <- ggplot(am_tn_dat, aes(x = tn, y = qr_AM)) +
   geom_point(
     size = 2,
     color = "darkgrey",
@@ -46,21 +46,21 @@ am_tn_p <- ggplot(am_tn_dat, aes(x = tn, y = am)) +
             color = "#004529",
             linewidth = 1.2,
             linetype = line_type) +
-  labs(x = "TN", y = "AMFR") +
+  labs(x = "TN", y = "AMCR") +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
   ) +
-  annotate("text", x = max(df$tn), y = max(df$am), 
+  annotate("text", x = max(df$tn), y = max(df$qr_AM), 
            label =  paste(coef_label, p_label, sep = '~~~'), 
            parse = TRUE, hjust = 1, vjust = 1, size = 5)
 
 print(am_tn_p)
 
 ##### tp #########
-am_tp <- betareg(am ~ tp, data = df)
+am_tp <- betareg(qr_AM ~ tp, data = df)
 summary(am_tp) #0.882
 p_value <- coef(summary(am_tp))$mean["tp", "Pr(>|z|)"]
 tp_coef <- coef(summary(am_tp))$mean["tp", "Estimate"]
@@ -80,11 +80,11 @@ line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 am_tp_fitted <- predict(am_tp, type = "response", na.action = na.exclude)
 
 am_tp_dat <- df %>% 
-  dplyr::select(am, tp, Latin) %>% 
+  dplyr::select(qr_AM, tp, Latin) %>% 
   dplyr::mutate(
     fitted = am_tp_fitted)
 
-am_tp_p <- ggplot(am_tp_dat, aes(x = tp, y = am)) +
+am_tp_p <- ggplot(am_tp_dat, aes(x = tp, y = qr_AM)) +
   geom_point(
     size = 2,
     color = "darkgrey",
@@ -101,15 +101,15 @@ am_tp_p <- ggplot(am_tp_dat, aes(x = tp, y = am)) +
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
   ) +
-  annotate("text", x = max(df$tp), y = max(df$am), 
+  annotate("text", x = max(df$tp), y = max(df$qr_AM), 
            label =  paste(coef_label, p_label, sep = '~~~'), 
            parse = TRUE, hjust = 1, vjust = 1, size = 5)
 
 print(am_tp_p)
 
 #### tn/tp ####
-
-am_tndtp <- betareg(am ~ tndtp, data = df)
+df <- df[!is.na(df$tndtp) & df$tndtp != max(df$tndtp, na.rm = TRUE), ]
+am_tndtp <- betareg(qr_AM ~ tndtp, data = df)
 summary(am_tndtp) #0.882
 p_value <- coef(summary(am_tndtp))$mean["tndtp", "Pr(>|z|)"]
 tndtp_coef <- coef(summary(am_tndtp))$mean["tndtp", "Estimate"]
@@ -129,11 +129,11 @@ line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 am_tndtp_fitted <- predict(am_tndtp, type = "response", na.action = na.exclude)
 
 am_tndtp_dat <- df %>% 
-  dplyr::select(am, tndtp, Latin) %>% 
+  dplyr::select(qr_AM, tndtp, Latin) %>% 
   dplyr::mutate(
     fitted = am_tndtp_fitted)
 
-am_tndtp_p <- ggplot(am_tndtp_dat, aes(x = tndtp, y = am)) +
+am_tndtp_p <- ggplot(am_tndtp_dat, aes(x = tndtp, y = qr_AM)) +
   geom_point(
     size = 2,
     color = "darkgrey",
@@ -150,7 +150,7 @@ am_tndtp_p <- ggplot(am_tndtp_dat, aes(x = tndtp, y = am)) +
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
   ) +
-  annotate("text", x = max(df$tndtp), y = max(df$am), 
+  annotate("text", x = max(df$tndtp), y = max(df$qr_AM), 
            label =  paste(coef_label, p_label, sep = '~~~'), 
            parse = TRUE, hjust = 1, vjust = 1, size = 5)
 
@@ -159,7 +159,7 @@ print(am_tndtp_p)
 
 
 ##### soc #########
-am_soc <- betareg(am ~ soc, data = df)
+am_soc <- betareg(qr_AM ~ soc, data = df)
 summary(am_soc) #0.882
 p_value <- coef(summary(am_soc))$mean["soc", "Pr(>|z|)"]
 soc_coef <- coef(summary(am_soc))$mean["soc", "Estimate"]
@@ -179,11 +179,11 @@ line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 am_soc_fitted <- predict(am_soc, type = "response", na.action = na.exclude)
 
 am_soc_dat <- df %>% 
-  dplyr::select(am, soc, Latin) %>% 
+  dplyr::select(qr_AM, soc, Latin) %>% 
   dplyr::mutate(
     fitted = am_soc_fitted)
 
-am_soc_p <- ggplot(am_soc_dat, aes(x = soc, y = am)) +
+am_soc_p <- ggplot(am_soc_dat, aes(x = soc, y = qr_AM)) +
   geom_point(
     size = 2,
     color = "darkgrey",
@@ -193,14 +193,14 @@ am_soc_p <- ggplot(am_soc_dat, aes(x = soc, y = am)) +
             color = "#004529",
             linewidth = 1.2,
             linetype = line_type) +
-  labs(x = "SOC", y = "AMFR") +
+  labs(x = "SOC", y = "AMCR") +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
   ) +
-  annotate("text", x = max(df$soc), y = max(df$am), 
+  annotate("text", x = max(df$soc), y = max(df$qr_AM), 
            label =  sprintf("italic(beta) == '%0.3f' ~ italic(p)=='%0.3f'", soc_coef, p_value), 
            parse = TRUE, hjust = 1, vjust = 1, size = 5)
 
@@ -208,7 +208,7 @@ print(am_soc_p)
 
 ### ap ####
 
-am_ap <- betareg(am ~ ap, data = df)
+am_ap <- betareg(qr_AM ~ ap, data = df)
 summary(am_ap) #0.882
 p_value <- coef(summary(am_ap))$mean["ap", "Pr(>|z|)"]
 ap_coef <- coef(summary(am_ap))$mean["ap", "Estimate"]
@@ -228,11 +228,11 @@ line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 am_ap_fitted <- predict(am_ap, type = "response", na.action = na.exclude)
 
 am_ap_dat <- df %>% 
-  dplyr::select(am, ap, Latin) %>% 
+  dplyr::select(qr_AM, ap, Latin) %>% 
   dplyr::mutate(
     fitted = am_ap_fitted)
 
-am_ap_p <- ggplot(am_ap_dat, aes(x = ap, y = am)) +
+am_ap_p <- ggplot(am_ap_dat, aes(x = ap, y = qr_AM)) +
   geom_point(
     size = 2,
     color = "darkgrey",
@@ -249,7 +249,7 @@ am_ap_p <- ggplot(am_ap_dat, aes(x = ap, y = am)) +
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
   ) +
-  annotate("text", x = max(df$ap), y = max(df$am), 
+  annotate("text", x = max(df$ap), y = max(df$qr_AM), 
            label =  paste(coef_label, p_label, sep = '~~~'), 
            parse = TRUE, hjust = 1, vjust = 1, size = 5)
 
@@ -257,7 +257,7 @@ print(am_ap_p)
 
 ### ph ####
 
-am_ph <- betareg(am ~ ph, data = df)
+am_ph <- betareg(qr_AM ~ ph, data = df)
 summary(am_ph) #0.882
 p_value <- coef(summary(am_ph))$mean["ph", "Pr(>|z|)"]
 ph_coef <- coef(summary(am_ph))$mean["ph", "Estimate"]
@@ -277,11 +277,11 @@ line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 am_ph_fitted <- predict(am_ph, type = "response", na.action = na.exclude)
 
 am_ph_dat <- df %>% 
-  dplyr::select(am, ph, Latin) %>% 
+  dplyr::select(qr_AM, ph, Latin) %>% 
   dplyr::mutate(
     fitted = am_ph_fitted)
 
-am_ph_p <- ggplot(am_ph_dat, aes(x = ph, y = am)) +
+am_ph_p <- ggplot(am_ph_dat, aes(x = ph, y = qr_AM)) +
   geom_point(
     size = 2,
     color = "darkgrey",
@@ -291,14 +291,14 @@ am_ph_p <- ggplot(am_ph_dat, aes(x = ph, y = am)) +
             color = "#004529",
             linewidth = 1.2,
             linetype = line_type) +
-  labs(x = "pH", y = "AMFR") +
+  labs(x = "pH", y = "AMCR") +
   theme_minimal() +
   theme(
     axis.text = element_text(face = "bold", size = 12),
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
   ) +
-  annotate("text", x = max(df$ph), y = max(df$am), 
+  annotate("text", x = max(df$ph), y = max(df$qr_AM), 
            label =  paste(coef_label, p_label, sep = '~~~'), 
            parse = TRUE, hjust = 1, vjust = 1, size = 5)
 
@@ -306,7 +306,7 @@ print(am_ph_p)
 
 ### moisture ####
 
-am_moisture <- betareg(am ~ moisture, data = df)
+am_moisture <- betareg(qr_AM ~ moisture, data = df)
 summary(am_moisture) #0.882
 p_value <- coef(summary(am_moisture))$mean["moisture", "Pr(>|z|)"]
 moisture_coef <- coef(summary(am_moisture))$mean["moisture", "Estimate"]
@@ -326,11 +326,11 @@ line_type <- ifelse(p_value > 0.01, "dashed", "solid")
 am_moisture_fitted <- predict(am_moisture, type = "response", na.action = na.exclude)
 
 am_moisture_dat <- df %>% 
-  dplyr::select(am, moisture, Latin) %>% 
+  dplyr::select(qr_AM, moisture, Latin) %>% 
   dplyr::mutate(
     fitted = am_moisture_fitted)
 
-am_moisture_p <- ggplot(am_moisture_dat, aes(x = moisture, y = am)) +
+am_moisture_p <- ggplot(am_moisture_dat, aes(x = moisture, y = qr_AM)) +
   geom_point(
     size = 2,
     color = "darkgrey",
@@ -347,7 +347,7 @@ am_moisture_p <- ggplot(am_moisture_dat, aes(x = moisture, y = am)) +
     axis.title = element_text(face = "bold", size = 14),
     legend.position = "none"
   ) +
-  annotate("text", x = max(df$moisture), y = max(df$am), 
+  annotate("text", x = max(df$moisture), y = max(df$qr_AM), 
            label =  sprintf("italic(beta) == '%0.3f' ~ italic(p)=='%0.3f'", moisture_coef, p_value), 
            parse = TRUE, hjust = 1, vjust = 1, size = 5)
 
@@ -372,7 +372,7 @@ lmplots2 <- plot_grid(
 #lmplots2
 
 ggsave(
-    "pic/figure S2.png",
+    "pic/figure S2_2.png",
     lmplots2,
     width = 4000,
     height = 7200,

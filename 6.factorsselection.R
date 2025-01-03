@@ -17,7 +17,7 @@ reg <- root_qrl %>%
             by = "TagNew", suffix = c("", "_sp_loc")) %>%
   left_join(hsd_neighbor, 
             by = "TagNew", suffix = c("", "_hsd_neighbor"))
-reg <- cbind(reg,pd_ind_all,env)
+reg <- cbind(reg,pd_ind_all)
 #整理一下reg
 
 reg <- reg %>%
@@ -236,7 +236,7 @@ reg_scaled <- reg %>%
 
 rm(scale_data)
 #注意！这里没有保存reg_scaled
-save(reg,reg_sc, file = "data/data_for_reg.RData")
+#save(reg,reg_sc, file = "data/data_for_reg.RData")
 
 ###### 选择回归用的变量 #####
 

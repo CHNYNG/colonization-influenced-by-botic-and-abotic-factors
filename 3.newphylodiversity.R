@@ -257,10 +257,10 @@ for (i in 1:dim(focal_sp)[1]) {
 
 
 pd_ind_all <- data.frame(
-  totpd_20, avepd_20, minpd_20, apd_20, ntpd_20,
+#  totpd_20, avepd_20, minpd_20, apd_20, ntpd_20,
   totpd_10, avepd_10, minpd_10, apd_10, ntpd_10,
-  totpd_50, avepd_50, minpd_50, apd_50, ntpd_50,
-  totpd_100, avepd_100, minpd_100, apd_100, ntpd_100
+#  totpd_50, avepd_50, minpd_50, apd_50, ntpd_50,
+#  totpd_100, avepd_100, minpd_100, apd_100, ntpd_100
 )
 
 rm(focal_sp, focal_sp_in_phydist, null_dat_sub, phy_dist, tr_sub, apd_10, apd_20, apd_50,apd_100,

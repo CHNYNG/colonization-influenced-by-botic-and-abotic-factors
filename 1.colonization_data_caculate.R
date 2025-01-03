@@ -140,14 +140,19 @@ total_data <- bind_rows(Nor_data, S_data, N_data) %>%
 
 root_qrl <- data.frame()
 
+HSD_data <- distinct(HSD_data, TagNew, .keep_all = TRUE)
 root_qrl <- Qrl_ca %>%
   left_join(total_data, by = "Numbers") %>%
-#  left_join(HSD_data, by = "TagNew") %>%
+  left_join(HSD_data, by = "TagNew") %>%
+  filter(!(TagNew == "NA")) %>%
   left_join(root_morphology, by = "TagNew")
 
 #整理下root_qrl
-root_qrl <- root_qrl %>% select(-X)
-
+root_qrl <- root_qrl %>% select(-X, -Species.y)
+root_qrl <- distinct(root_qrl, TagNew, .keep_all = TRUE)
+root_qrl <- root_qrl %>%
+  filter(!(TagNew == "NA")) %>%
+  filter(!(GX == "NA"))
 #### 这里处理完了，把已经有的数据删一删
 #rm(diameter,weigh,total_data,S_data,N_data,length,Nor_data,Qrl,Qrl_ca,root_morphology)
 #save(root_qrl,file = "E:/黑石顶测菌根/菌根侵染率/数据整理/tmp/For_git_Rstudio/root_qrl.RData")
@@ -224,16 +229,17 @@ colnames(specieslist) <- c("Latin","Genus","Family","Family_number","Order","Gro
 #这个unique_species之后还会用到
 #unique_species <- unique(HSD_data$Latin)
 #load(file =  "data/specieslist.RData")
-root_qrl <- left_join(root_qrl,specieslist[,c("Latin","Genus","Family","Order")],
-                      by = "Latin")
 ###
 #先把branch=0筛出来？不需要那么多
 root_qrl <- root_qrl %>%
-  filter(Branch ==0) %>%
+  #  filter(Branch ==0) %>%
   select(-Numbers) %>%
-  distinct(TagNew, .keep_all = TRUE) %>%
+  #  distinct(TagNew, .keep_all = TRUE) %>%
   mutate(Latin = gsub(" ", "_", Latin))
 
+
+root_qrl <- left_join(root_qrl,specieslist[,c("Latin","Genus","Family","Order")],
+                      by = "Latin")
 
 #给物种信息合并菌根类型
 ###先不加，嘤嘤嘤-

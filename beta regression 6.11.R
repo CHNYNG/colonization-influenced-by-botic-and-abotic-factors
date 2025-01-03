@@ -6,7 +6,8 @@ library(piecewiseSEM)
 library(performance)
 library(MuMIn)
 
-load("D:/Users/65205/Documents/WeChat Files/wxid_ulzapgmya6hv22/FileStorage/File/2024-06/cy 6.7.RData")
+
+#load("D:/Users/65205/Documents/WeChat Files/wxid_ulzapgmya6hv22/FileStorage/File/2024-06/cy 6.7.RData")
 # data preparation
 # origninal data set is reg_scaled
 # we can exclude ecm species and re-scaled data
@@ -36,7 +37,7 @@ summary(am_phylo_pcoa_axes)
 #把pcoa的结果中心化一下？
 
 am_beta_dat <- reg_scaled %>%
-  filter(!is.na(am)) %>%
+  filter(!is.na(qr_AM)) %>%
   select(
     # species identity
     Latin,
@@ -54,7 +55,7 @@ am_beta_dat <- reg_scaled %>%
     elevation,
     slope,
     aspect,
-    convexity,
+    curvature,
     # phylogenetic
     minpd_10,
     avepd_10,
@@ -74,7 +75,7 @@ am_beta_dat <- reg_scaled %>%
     rd_is = scale(RDi * invsimpson_div_10),
     rr_is = scale(RRi * invsimpson_div_10),
     re_is = scale(REi * invsimpson_div_10),
-    am_beta_dat %>% filter(!is.na(am)) %>% select(am)
+    reg_scaled %>% filter(!is.na(qr_AM)) %>% select(qr_AM)
   )
 am_beta_dat <- am_beta_dat %>%
   mutate(across(c(RDi, RRi, REi,
@@ -84,7 +85,7 @@ am_beta_dat <- am_beta_dat %>%
                   elevation,
                   slope,
                   aspect,
-                  convexity,
+                  curvature,
                   minpd_10,
                   avepd_10,
                   totpd_10,
@@ -101,7 +102,7 @@ am_beta_dat <- am_beta_dat %>%
 library(betareg)
 options(na.action = "na.omit")
 am_beta_mod_ful <- betareg(
-  am ~ minpd_10 + avepd_10 + totpd_10 + AD + SRL + SRA + DBH2 + CBD_10 + BD_10 + 
+  qr_AM ~ minpd_10 + avepd_10 + totpd_10 + AD + SRL + SRA + DBH2 + CBD_10 + BD_10 + 
     elevation + invsimpson_div_10 + richness_10 + RDi + pcoa1 + pcoa2 + rd_is,
   data = am_beta_dat
 )
@@ -120,7 +121,7 @@ am_beta_mod_ave <- summary(model.avg(am_beta_mod_sub, subset = delta < 2)) # ave
 # if you want to make everything simple, use am_beta_mod_minaic
 # and based on am_beta_mod_minaic:
 am_beta_mod_optimal <- betareg(
-  am ~ minpd_10 + avepd_10 + DBH2 + CBD_10 + invsimpson_div_10 + RDi + pcoa1 + pcoa2 + rd_is,
+  qr_AM ~ minpd_10 + avepd_10 + DBH2 + CBD_10 + invsimpson_div_10 + RDi + pcoa1 + pcoa2 + rd_is,
   data = am_beta_dat
 )
 summary(am_beta_mod_optimal)
@@ -141,8 +142,6 @@ library(ggplot2)
 
 #画图
 # 安装并加载所需的包
-if (!require("ggplot2")) install.packages("ggplot2")
-if (!require("gridExtra")) install.packages("gridExtra")
 library(ggplot2)
 library(gridExtra)
 
@@ -220,7 +219,8 @@ p1 <- ggplot(data, aes(x = Estimate, y = Variable, color = Variable)) +
         axis.title.y = element_blank(),
         axis.title.x = element_blank(),
        # panel.grid.major = element_blank(),# 去掉主网格线
-        panel.grid.minor = element_blank()   # 去掉次网格线
+        panel.grid.minor = element_blank(),   # 去掉次网格线
+       plot.margin = unit(c(1, 2, 1, 1), "lines")
   )+
   geom_text(aes(label = labels), hjust = -0.2, vjust = -0.5, size = 4) # 添加标签
 p1
@@ -250,7 +250,7 @@ library(cowplot)
 regressionplot <- plot_grid(p1, p2, rel_widths = c(5, 1))
 regressionplot
 ggsave(
-  "pic/figure4.png",
+  "pic/figure4_2.png",
   regressionplot,
   width = 2000,
   height = 1500,
@@ -268,6 +268,20 @@ ggsave(
 
 # we can then construct psem
 # but you need optimize it!
+# consider spatial random effect
+# we construct 50m * 50m cells
+# you can try other cells like 20 * 20
+am_beta_dat$GX[am_beta_dat$GX == 1000] <- 999.99
+am_beta_dat$GY[am_beta_dat$GY == 500] <- 499.99
+am_beta_dat$GX[am_beta_dat$GX == 0] <- 0.01
+am_beta_dat$GY[am_beta_dat$GY == 0] <- 0.01
+
+am_beta_dat$cellx50 <- am_beta_dat$GX %/% 50 
+am_beta_dat$celly50 <- am_beta_dat$GY %/% 50
+
+am_beta_dat$c50 <- factor(paste((am_beta_dat$celly50 + 1001), 
+                                sep = "_", 
+                                (am_beta_dat$cellx50 + 1001)))
 
 #sem
 library(glmmTMB)
@@ -275,7 +289,7 @@ library(piecewiseSEM)
 am_col_psem2 <- psem(
   # am
   glmmTMB(
-    am ~ minpd_10 + avepd_10 + DBH2 + CBD_10 + invsimpson_div_10 +
+    qr_AM ~ minpd_10 + avepd_10 + DBH2 + CBD_10 + invsimpson_div_10 +
       RDi + pcoa1 + pcoa2 + (1 | c50),
     data = am_beta_dat,
     family = beta_family
