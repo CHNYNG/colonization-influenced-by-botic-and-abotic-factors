@@ -7,8 +7,9 @@
 library(dplyr)
 
 #把所有的数据集合起来
-load("data/env_weitao.RData")
-
+#让我把这个root_qrl提出来
+#把我的env数据load进来
+load("data/cy_env.RData")
 reg <- data.frame()
 reg <- root_qrl %>%
   left_join(soil_pred[, -which(names(soil_pred) %in% c("GX", "GY"))],
@@ -16,10 +17,10 @@ reg <- root_qrl %>%
   left_join(sp_loc[, -which(names(sp_loc) %in% c("GX", "GY"))],
             by = "TagNew", suffix = c("", "_sp_loc")) %>%
   left_join(hsd_neighbor, 
-            by = "TagNew", suffix = c("", "_hsd_neighbor"))
-reg <- cbind(reg,pd_ind_all)
+            by = "TagNew", suffix = c("", "_hsd_neighbor"))%>%
+  left_join(select(cy, TagNew, elevation, slope, aspect, curvature), by = "TagNew")
+  reg <- cbind(reg,pd_ind_all)
 #整理一下reg
-
 reg <- reg %>%
   #筛一下reg，留下Branch==0的数值
   # filter(Branch == 0) %>%
@@ -59,7 +60,7 @@ reg <- reg %>%
 pca_data <- reg[, c("soc","tn","tp","ap","ph", "moisture")]
 pca_result <- prcomp(pca_data, scale = TRUE)
 pca_result <- pca_result$x
-pca_results <- data.frame(PC1 = pca_result[, 1], PC2 = pca_result[, 2], reg[,c("qr_AM","M_Type")])
+pca_results <- data.frame(PC1 = pca_result[, 1], PC2 = pca_result[, 2], reg[,c("qr_AM")])
 summary(pca_result)
 reg <- reg %>%
   mutate(soil_pc1 = pca_results[,"PC1"],
@@ -169,8 +170,12 @@ kmeans_result <- kmeans(soil_cluster, centers = k)
 # 查看每个样本所属的簇
 #cluster_assignments <- kmeans_result$cluster
 
-reg <- reg %>%
-  mutate(soil_cluster = kmeans_result$cluster)
+#reg <- reg %>%
+#  cbind(soil_cluster = kmeans_result$cluster)
+##### 删掉几个点 ####
+### 删掉AD>3的行
+reg <- subset(reg, AD <= 3)
+
 
 
 #####
@@ -179,31 +184,32 @@ reg <- reg %>%
 #####
 #这部分scale的方法是把其改成0-1，但ntpd需要保留正负，所以重新scale一次，使用z-scale
 #也就是将其直接转化为其标准正态分布（均值为0，标准差为1）
-scale_to_01 <- function(x) {
+#scale_to_01 <- function(x) {
   # 使用na.rm参数忽略NA值
-(x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
-}
+#(x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+#}
 
 scale_data <- reg %>%
   select(DBH1, DBH2, rel_dbh_multi, AD, SRL, SRA,
          soc, tn, tp, ap, ph, moisture,
-         elevation, aspect, slope, convexity,
-         pd100_unweigh, mpd100_unweigh, mpd100_weigh, mntd100_unweigh, mntd100_weigh,
-         pd50_unweigh, mpd50_unweigh, mpd50_weigh, mntd50_unweigh, mntd50_weigh,
-         pd20_unweigh, mpd20_unweigh, mpd20_weigh, mntd20_unweigh, mntd20_weigh,
+         elevation, aspect, slope, curvature,
+#         pd100_unweigh, mpd100_unweigh, mpd100_weigh, mntd100_unweigh, mntd100_weigh,
+#         pd50_unweigh, mpd50_unweigh, mpd50_weigh, mntd50_unweigh, mntd50_weigh,
+#         pd20_unweigh, mpd20_unweigh, mpd20_weigh, mntd20_unweigh, mntd20_weigh,
          pd10_unweigh, mpd10_unweigh, mpd10_weigh, mntd10_unweigh, mntd10_weigh,
-         totpd_20, avepd_20, minpd_20, apd_20, ntpd_20, 
+#         totpd_20, avepd_20, minpd_20, apd_20, ntpd_20, 
          totpd_10, avepd_10, minpd_10, apd_10, ntpd_10, 
-         totpd_50, avepd_50, minpd_50, apd_50, ntpd_50, 
-         totpd_100, avepd_100, minpd_100, apd_100, ntpd_100, 
-         shannon_div_20, invsimpson_div_20, simpson_div_20,
+#         totpd_50, avepd_50, minpd_50, apd_50, ntpd_50, 
+#         totpd_100, avepd_100, minpd_100, apd_100, ntpd_100, 
+#         shannon_div_20, invsimpson_div_20, simpson_div_20,
          shannon_div_10, invsimpson_div_10, simpson_div_10,
-         shannon_div_50, invsimpson_div_50, simpson_div_50,
-         shannon_div_100, invsimpson_div_100, simpson_div_100,
-         BD_20, CBD_20, HBD_20,
-         BD_10, CBD_10, HBD_10,
-         BD_50, CBD_50, HBD_50,
-         BD_100, CBD_100, HBD_100, richness_10) %>%
+#         shannon_div_50, invsimpson_div_50, simpson_div_50,
+ #        shannon_div_100, invsimpson_div_100, simpson_div_100,
+#         BD_20, CBD_20, HBD_20,
+         BD_10, CBD_10, HBD_10,richness_10
+#         BD_50, CBD_50, HBD_50,
+#         BD_100, CBD_100, HBD_100, 
+) %>%
   mutate(tndtp = tn/tp)
 
 scale_data <- as.matrix(scale_data)
@@ -213,9 +219,10 @@ scale_data <- apply(scale_data,2,scale)
 scale_data <- as.data.frame(scale_data)
 
 reg_scaled <- reg %>%
-  select( -DBH1, -DBH2, -rel_dbh_multi, -AD, -SRL, -SRA,
+  select( -DBH1, -DBH2, #-rel_dbh_multi, 
+          -AD, -SRL, -SRA,
           -soc, -tn, -tp, -ap, -ph, -moisture, 
-          -elevation, -aspect, -slope, -convexity,
+          -elevation, -aspect, -slope, -curvature,
           -pd100_unweigh, -mpd100_unweigh, -mpd100_weigh, -mntd100_unweigh, -mntd100_weigh,
           -pd50_unweigh, -mpd50_unweigh, -mpd50_weigh, -mntd50_unweigh, -mntd50_weigh,
           -pd20_unweigh, -mpd20_unweigh, -mpd20_weigh, -mntd20_unweigh, -mntd20_weigh,
@@ -226,17 +233,23 @@ reg_scaled <- reg %>%
           -totpd_100, -avepd_100, -minpd_100, -apd_100, -ntpd_100,
           -shannon_div_20, -invsimpson_div_20, -simpson_div_20,
           -shannon_div_10, -invsimpson_div_10, -simpson_div_10,
-          -shannon_div_50, -invsimpson_div_50, -simpson_div_50,
-          -shannon_div_100, -invsimpson_div_100, -simpson_div_100,
+#          -shannon_div_50, -invsimpson_div_50, -simpson_div_50,
+#          -shannon_div_100, -invsimpson_div_100, -simpson_div_100,
           -BD_20, -CBD_20, -HBD_20,
-          -BD_10, -CBD_10, -HBD_10,
-          -BD_100, -CBD_100, -HBD_100,
-          -BD_50, -CBD_50, -HBD_50, -richness_10)%>%
+          -BD_10, -CBD_10, -HBD_10,-richness_10
+#          -BD_100, -CBD_100, -HBD_100,
+#          -BD_50, -CBD_50, -HBD_50, 
+)%>%
   bind_cols(scale_data)
 
-rm(scale_data)
-#注意！这里没有保存reg_scaled
-#save(reg,reg_sc, file = "data/data_for_reg.RData")
+
+#rm(scale_data)
+#注意！这里没有保存
+save(reg,reg_scaled, file = "data/data_for_reg.RData")
+####整理一下AM的数据
+#Furthermore, if y also assumes the extremes 0 and 1, a useful transformation in practice is (y·(n-1)+0.5)/n where n is the sample size (Smithson and Verkuilen 2006).
+n <- sum(!is.na(reg_scaled$qr_AM))
+reg_scaled$qr_AM <- (reg_scaled$qr_AM * (n - 1) + 0.5)/n
 
 ###### 选择回归用的变量 #####
 

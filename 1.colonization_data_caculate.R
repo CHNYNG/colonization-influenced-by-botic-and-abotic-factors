@@ -21,8 +21,8 @@ diameter <- read.table("data/ylj_for_diameter.txt",
                        header = F,sep="\t",na.strings = "NA",
                        fill = T,fileEncoding = "GBK")
 diameter <- diameter%>%
-  select(-c(2:17, 19, 21, 23:103)) %>%
-  rename(TagNew = V1, ProjArea = V18, SurfArea = V20, AvgDiam = V22) %>%
+  select(-c(2:15,17, 19, 21, 23:103)) %>%
+  rename(TagNew = V1,length1 = V16, ProjArea = V18, SurfArea = V20, AvgDiam = V22) %>%
   mutate(TagNew = str_pad(as.character(TagNew), width = 7, side = "left", pad = "0"))
 
 HSD_data <- HSD_data %>%
@@ -70,13 +70,14 @@ root_morphology <- root_morphology %>%
 # 查看整理后的数据
 head(root_morphology)
 
-root_warning <- subset(root_morphology, is.na(Weight.g))
-View(root_warning)
+#root_warning <- subset(root_morphology, is.na(Weight.g))
+#View(root_warning)
 #write.csv(root_warning,"root_warning.csv",fileEncoding = "GBK")
 # 这里记一下单位，SRL是mm/g, SRA是平方mm/g
 root_morphology <- root_morphology %>%
   mutate(SRL = as.numeric(Length) / as.numeric(Weight.g),
-         SRA = as.numeric(SurfArea) / as.numeric(Weight.g))
+         SRA = as.numeric(SurfArea) / as.numeric(Weight.g),
+         SRL1 = as.numeric(length1)/ as.numeric(Weight.g))
 
 
 Qrl <- Qrl %>%
@@ -233,9 +234,9 @@ colnames(specieslist) <- c("Latin","Genus","Family","Family_number","Order","Gro
 #先把branch=0筛出来？不需要那么多
 root_qrl <- root_qrl %>%
   #  filter(Branch ==0) %>%
-  select(-Numbers) %>%
+#  select(-Numbers) %>%
   #  distinct(TagNew, .keep_all = TRUE) %>%
-  mutate(Latin = gsub(" ", "_", Latin))
+  mutate(Latin = gsub("_", " ", Latin))
 
 
 root_qrl <- left_join(root_qrl,specieslist[,c("Latin","Genus","Family","Order")],
