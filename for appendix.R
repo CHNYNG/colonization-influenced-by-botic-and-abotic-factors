@@ -500,7 +500,7 @@ p <- ggtree(selected_phylo_tree, layout = "circular") +
 p
 
 ggsave(
-  "pic/figure S1.png",
+  "pic/figure S1.tiff",
   p,
   width = 6000,
   height = 6000,
