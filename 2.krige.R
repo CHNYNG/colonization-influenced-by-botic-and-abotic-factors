@@ -103,6 +103,7 @@ tp_variog <- variog(
   trend = "2nd",
   max.dist = tp_g_maxdis
 )
+
 #####
 #ap
 ap_g <- as.geodata(soil, 

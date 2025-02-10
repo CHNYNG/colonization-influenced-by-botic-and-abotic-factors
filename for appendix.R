@@ -372,7 +372,7 @@ lmplots2 <- plot_grid(
 #lmplots2
 
 ggsave(
-    "pic/figure S2_2.png",
+    "pic/figure S2_2.tiff",
     lmplots2,
     width = 4000,
     height = 7200,

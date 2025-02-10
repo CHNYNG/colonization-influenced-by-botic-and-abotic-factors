@@ -76,7 +76,7 @@ combined_plot <- ggplot() +
 print(combined_plot)
 
 ggsave(
-  "pic/figure1_2.png",
+  "pic/figure1_2.tiff",
   combined_plot,
   width = 3000,
   height = 1600,
@@ -231,7 +231,7 @@ print(am.plot)
 
 
 ggsave(
-  "pic/figure2_2.png",
+  "pic/figure2_2.tiff",
   am.plot,
   width = 3000,
   height = 2200,
@@ -378,7 +378,7 @@ am_SRA_p
 ##### SRL ####
 # 去掉 SRL 中的 NA 和最大值
 am_beta_dat_SRL <- am_beta_dat[!is.na(am_beta_dat$SRL) & am_beta_dat$SRL != max(am_beta_dat$SRL, na.rm = TRUE), ]
-am_SRL <- betareg(qr_AM ~ SRL, data = am_beta_dat_SRL)
+fam_SRL <- betareg(qr_AM ~ SRL, data = am_beta_dat_SRL)
 summary(am_SRL) #p=0.0294
 
 p_value <- coef(summary(am_SRL))$mean["SRL", "Pr(>|z|)"]
@@ -903,7 +903,7 @@ lmplot
 
 
 ggsave(
-  "pic/figure5.png",
+  "pic/figure5.tiff",
   lmplot,
   width = 2000,
   height = 1100,

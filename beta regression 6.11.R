@@ -250,7 +250,7 @@ library(cowplot)
 regressionplot <- plot_grid(p1, p2, rel_widths = c(5, 1))
 regressionplot
 ggsave(
-  "pic/figure4_2.png",
+  "pic/figure4_2.tiff",
   regressionplot,
   width = 2000,
   height = 1500,
